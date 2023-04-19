@@ -15,6 +15,7 @@ import matplotlib.dates as mdates
 import prettytable as pt
 import math
 import private_config
+from pymongo import MongoClient
 
 
 def get_gmx_price():
@@ -683,3 +684,23 @@ def create_production_slippage_graph(SITE_ID, lending_name):
 
     plt.legend(loc="lower left")
     plt.savefig("results\\" + lending_name + ".slippage.jpg")
+
+def record_monitoring_data(monitoring_data):
+    if not hasattr(private_config, 'mongo_db_uri') or private_config.mongo_db_uri == '':
+        print('record_monitoring_data: no mongodb access uri or uri empty in private config')
+    else:
+        client = MongoClient(private_config.mongo_db_uri)
+        monit_db = client['overwatch']['monitoring']
+
+        monitoring_data['type'] = 'Liquidity Monitoring'
+        monitoring_data["lastUpdate"] = round(datetime.datetime.now().timestamp())
+
+        filter = {
+            "type": monitoring_data['type'],
+            "name": monitoring_data["name"],
+        }
+
+        new_monit_data = { "$set": monitoring_data }
+        update_result = monit_db.update_one(filter, new_monit_data, True)
+        print('record_monitoring_data: update result:', update_result.modified_count)
+        client.close()
