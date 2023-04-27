@@ -119,7 +119,7 @@ c = {
     'volume_for_slippage_10_percentss': [],
     'trade_every': 1800,
     "collaterals": [1_000_000 / ETH_PRICE, 2_000_000 / ETH_PRICE, 3_000_000 / ETH_PRICE,
-                    4_000_000 / ETH_PRICE, 5_000_000 / ETH_PRICE,
+                    4_000_000 / ETH_PRICE, 5_000_000 / ETH_PRICE, 6_000_000 / ETH_PRICE,
                     10_000_000 / ETH_PRICE, 15_000_000 / ETH_PRICE, 20_000_000 / ETH_PRICE],
     'liquidation_incentives': [],
     "stability_pool_initial_balances": [0],

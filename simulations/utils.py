@@ -16,6 +16,11 @@ import prettytable as pt
 import math
 import private_config
 from pymongo import MongoClient
+from sklearn.linear_model import LinearRegression
+from sklearn.svm import SVC
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.model_selection import cross_val_score
+from sklearn.neural_network import MLPRegressor
 
 
 def get_gmx_price():
@@ -704,3 +709,130 @@ def record_monitoring_data(monitoring_data):
         update_result = monit_db.update_one(filter, new_monit_data, True)
         print('record_monitoring_data: update result:', update_result.modified_count)
         client.close()
+        
+def convert_name(base_name):
+    if base_name == "WXDAI":
+        return "DAI"
+    if base_name == "WETH":
+        return "ETH"
+    if base_name == "WBTC":
+        return "BTC"
+    if base_name == "EURe":
+        return "EUR"
+
+    return base_name
+
+def run_ml_on_cf_data(file_name):
+    # Load the data into a pandas DataFrame
+    data = pd.read_csv(file_name)
+    # Split the data into features and target
+    #X = data["md"] ** 0.5
+    X = data[["usd_volume_for_slippage", "assets_std_ratio", "lf", "dc"]]
+    y = data["md"]
+
+    # Create a linear regression model
+    model = LinearRegression()
+    # model = DecisionTreeRegressor(random_state=0)
+    # model =  MLPRegressor(random_state=0, max_iter=500)
+
+    # Perform cross validation with 5 folds
+    scores = cross_val_score(model, X, y, cv=10, scoring='r2')
+
+    # Print the mean score and standard deviation
+    print("Cross validation scores: ", scores)
+    print("Mean score: ", scores.mean())
+    print("Standard deviation: ", scores.std())
+
+def create_cf_data_generic(SITE_ID):
+    df = pd.concat([pd.read_csv(file) for file in glob.glob(SITE_ID + "\\*.csv")])
+    df["volume"] = df["collateral"] / df["volume_for_slippage_10_percents"]
+    files = df["file_name"].unique()
+    for file in files:
+        print(file)
+        data = df.loc[df["file_name"] == file]
+        data.reset_index(drop=True, inplace=True)
+        X = data[["volume", "series_std_ratio"]]
+        y = data["max_drop"]
+        model = LinearRegression()
+        scores = cross_val_score(model, X, y, cv=5, scoring='r2')
+        print("Cross validation scores: ", scores)
+        print("Mean score: ", scores.mean())
+        print("Standard deviation: ", scores.std())
+        plt.cla()
+        plt.close()
+
+        x = data['volume'].to_numpy()
+        y = data['series_std_ratio'].to_numpy()
+        z = data['max_drop'].to_numpy()
+
+        # Create a meshgrid from the x and y arrays
+        X, Y = np.meshgrid(x, y)
+
+        # Reshape the z array into a 2D grid to match X and Y
+        Z = z.reshape((len(y), len(x)))
+
+        # Create a 3D plot object
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+
+        # Plot the surface
+        ax.plot_surface(X, Y, Z)
+
+        # Show the plot
+        plt.show()
+
+
+def create_cf_data(SITE_ID):
+    print(private_config.git_version_token)
+    gh = Github(login_or_token=private_config.git_version_token, base_url='https://api.github.com')
+    repo_name = "Risk-DAO/simulation-results"
+    repo = gh.get_repo(repo_name)
+    folders = repo.get_contents("./" + SITE_ID)
+    ff = [folder.path for folder in folders]
+    results = []
+    #folder = ff[-1]
+    for folder in ff:
+        print(folder)
+        try:
+            usd_volume_for_slippage_json = json.loads(
+                repo.get_contents(folder + "/usd_volume_for_slippage.json").decoded_content.decode())
+            assets_std_ratio_json = json.loads(
+                repo.get_contents(folder + "/assets_std_ratio.json").decoded_content.decode())
+            risk_params_json = json.loads(
+                repo.get_contents(folder + "/risk_params.json").decoded_content.decode())
+            for base in usd_volume_for_slippage_json:
+                if base == "json_time": continue
+                for quote in usd_volume_for_slippage_json[base]:
+                    if quote != "WETH" or base == "LINK" or base == "FOX" or base == "USDC" or base == "USDT": continue
+                    usd_volume_for_slippage = usd_volume_for_slippage_json[base][quote]["volume"]
+                    base1 = convert_name(base)
+                    quote1 = convert_name(quote)
+
+                    assets_std_ratio = 0
+                    if base1 in assets_std_ratio_json:
+                        assets_std_ratio = assets_std_ratio_json[base1][quote1]
+                    else:
+                        if quote1 in assets_std_ratio_json:
+                            assets_std_ratio = assets_std_ratio_json[quote1][base1]
+                        else:
+                            print("skipped", base1, quote1)
+                            continue
+
+                    for pp in risk_params_json[base + "-" + quote]:
+                        for p in risk_params_json[base + "-" + quote][pp]:
+                            dc = p["dc"]
+                            md = p["md"]
+                            lf = p["lf"]
+                            results.append({"folder": folder,
+                                            "base": base, "quote": quote,
+                                            "usd_volume_for_slippage": usd_volume_for_slippage,
+                                            "assets_std_ratio": assets_std_ratio, "dc": dc, "md": md, "lf": lf})
+
+        except Exception as e:
+            print("Exception in folder", str(e))
+        pd.DataFrame(results).to_csv(SITE_ID + ".csv", index=False)
+
+# move_to_prod("vesta", "2023-4-16-20-27")
+# create_cf_data("4")
+# run_ml_on_cf_data("4.csv")
+# create_cf_data_generic("simulation_results\\generic\\2023-4-22-21-58")

@@ -192,7 +192,7 @@ class stability_report:
         for index, row in df.iterrows():
             price = (row["ask_price"] + row["bid_price"]) * 0.5
             if last_price != 0:
-                price_change = ((price / last_price) - 1) * factor
+                price_change = ((price / last_price) - 1) * float(factor)
                 adjust_price = last_adjusted_price + last_adjusted_price * price_change
             else:
                 adjust_price = price
@@ -335,7 +335,7 @@ class stability_report:
                                                     stability_pool_initial_balance = collateral * s_balance
                                                     liquidation_ratio = target_volume / file_total_volume
 
-                                                cycle_trade_volume = volume_for_slippage_10_percents
+                                                cycle_trade_volume = float(volume_for_slippage_10_percents)
                                                 #self.get_volume_for_slippage(volume_for_slippage_10_percents * self.liquidation_factor, 1 - 0.1,1 - l_incentive)
 
                                                 stability_pool_simple_instance = stability_pool_simple.stability_pool(

@@ -22,7 +22,8 @@
     "dotenv": "^16.0.3",
     "ethers": "^5.7.2",
     "package.json": "^2.0.1",
-    "web3": "^1.7.4"
+    "web3": "^1.7.4",
+    "@balancer-labs/sdk": "^1.0.4"
   },
   "devDependencies": {
     "eslint": "^8.29.0"

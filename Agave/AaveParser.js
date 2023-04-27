@@ -64,6 +64,7 @@ class Aave {
       this.liquidationIncentive = {}
       this.collateralFactors = {}
       this.prices = {}
+      this.oraclePrices = {}
       this.underlying = {}
       this.closeFactor = {}
       this.borrowCaps = {}
@@ -152,6 +153,7 @@ class Aave {
 
             console.log("calling market price", {market}, {lastName})
             const price = await this.oracle.methods.getAssetPrice(market).call()
+            this.oraclePrices[market] = price;
             this.prices[market] = toBN(price).mul(toBN(10).pow(toBN(18 - Number(tokenDecimals))))
             console.log(price.toString())
             console.log("calling market price end")

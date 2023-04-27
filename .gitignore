@@ -34,11 +34,10 @@ gearbox/
 simulations/private_config.py
 Hadouken/*.json
 data.json
-agave/0x5E15d5E33d318dCEd84Bfe3F4EACe07909bE6d9c_data.json
+Agave/*.json
 aurigami/oracle.json
 vesta/oracle.json
 aurigami/NEARXLiquidity.json
-agave/oracle.json
 simulations/dex_price_tester.py
 ArbitrumDEX/eth-dai-arbitrum.csv
 ArbitrumDEX/eth-dai-arbitrum.csv_.draft
