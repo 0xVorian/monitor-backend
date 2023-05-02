@@ -301,7 +301,9 @@ def send_telegram_table(bot_id, chat_id, headers, rows):
 def compare_to_prod_and_send_alerts(old_alerts, data_time, name, base_SITE_ID, current_SITE_ID, alert_params, send_alerts=False, ignore_list=[]):
     print("comparing to prod", name)
     prod_version = get_prod_version(name)
-    print(prod_version)
+    print('retrieved prod_version:', prod_version)
+    prod_version = prod_version.strip('\n')
+    print('stripped prod_version:', prod_version)
     prod_file = json.loads(get_git_json_file(base_SITE_ID, prod_version, "usd_volume_for_slippage.json"))
     file = open("webserver" + os.path.sep + current_SITE_ID + os.path.sep + "usd_volume_for_slippage.json")
     last_file = json.load(file)
