@@ -692,7 +692,7 @@ def create_production_slippage_graph(SITE_ID, lending_name):
 
 def record_monitoring_data(monitoring_data):
     if not hasattr(private_config, 'mongo_db_uri') or private_config.mongo_db_uri == '':
-        print('record_monitoring_data: no mongodb access uri or uri empty in private config')
+        print('record_monitoring_data: mongo_db_uri or uri empty in private_config. Will not record monitoring')
     else:
         client = MongoClient(private_config.mongo_db_uri)
         monit_db = client['overwatch']['monitoring']
@@ -709,7 +709,7 @@ def record_monitoring_data(monitoring_data):
         update_result = monit_db.update_one(filter, new_monit_data, True)
         print('record_monitoring_data: update result:', update_result.modified_count)
         client.close()
-        
+
 def convert_name(base_name):
     if base_name == "WXDAI":
         return "DAI"
