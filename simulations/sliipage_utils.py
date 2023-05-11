@@ -10,10 +10,6 @@ def get_usd_volume_for_slippage(base, quote, slippage, asset_usdc_price, get_pri
     base_price = get_price_function(base, quote, 1000 / asset_usdc_price[base])
     max_price_volume = 1000
     min_price_volume = 1000 * 1000 * 1000
-    if base == "EURe":
-        min_price_volume = 1000 * 1000
-    if quote == "EURe":
-        min_price_volume = 1000 * 1000
     avg_slippage = 0
 
     while True:
@@ -42,7 +38,13 @@ def get_usd_volume_for_slippage(base, quote, slippage, asset_usdc_price, get_pri
             price = (avg_volume / asset_usdc_price["auSTNEAR"]) / quote_volume_in_quote
         else:
             price = get_price_function(base, quote, avg_volume / asset_usdc_price[base])
-        avg_slippage = price / base_price
+
+        # if price == -1, assume the avg_volume was too high to get a quote price
+        # to force retrying with a lower volume next, set avg_slippage to 100
+        if price == -1:
+            avg_slippage = 100
+        else:
+            avg_slippage = price / base_price
         print("min_price_volume", round(min_price_volume), "max_price_volume", round(max_price_volume),
               "Volume", round(avg_volume), "Slippage", round(avg_slippage, 3), "Target", slippage, "Price", price)
 

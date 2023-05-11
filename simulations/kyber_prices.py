@@ -137,8 +137,13 @@ class KyberPrices:
                 return price_in_base
             except Exception as e:
                 print(e)
-                print(response.json)
                 print(response.text)
+                error_data = response.json()
+                print(error_data)
+                if error_data['err'] == 'all quoteResults failed':
+                    # if no route found from the API, return a very high number
+                    print('all quoteResults failed returning -1')
+                    return -1
                 time.sleep(time_to_sleep)
                 time_to_sleep += 3
 
