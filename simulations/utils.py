@@ -760,6 +760,29 @@ def create_cf_data_generic(SITE_ID):
         plt.show()
 
 
+def merge_ada_file():
+    df1 = pd.read_csv("data\\20230511 -MELD-ADA - 2M.csv").sort_values("timestamp")
+    df2 = pd.read_csv("data\\ada-usdt.csv").sort_values("timestamp")
+
+    df2["timestamp"] /= 1000
+
+    df2["timestamp"] = df2["timestamp"].astype("int")
+    df1["timestamp"] = df1["timestamp"].astype("int")
+    df1 = df1.fillna(method='ffill')
+    df2 = df2.fillna(method='ffill')
+
+    df3 = pd.merge_asof(df2, df1, on="timestamp")
+    df3["open"] *= df3["price (ADA/MELD)"]
+    df3["close"] *= df3["price (ADA/MELD)"]
+    df3["high"] *= df3["price (ADA/MELD)"]
+    df3["low"] *= df3["price (ADA/MELD)"]
+    df3 = df3[df2.columns]
+    df3["timestamp"] = df3["timestamp"].astype("str")
+    df3["timestamp"] += "000"
+    df3 = df3.dropna()
+    df3.to_csv("data\\meld-usdt.csv", index=False)
+
+
 def create_cf_data(SITE_ID):
     print(private_config.git_version_token)
     gh = Github(login_or_token=private_config.git_version_token, base_url='https://api.github.com')
@@ -813,4 +836,5 @@ def create_cf_data(SITE_ID):
 # move_to_prod("vesta", "2023-4-16-20-27")
 # create_cf_data("4")
 # run_ml_on_cf_data("4.csv")
-# create_cf_data_generic("simulation_results\\generic\\2023-4-22-21-58")
+# create_cf_data_generic("simulation_results\\generic\\2023-4-27-21-58")
+# merge_ada_file()

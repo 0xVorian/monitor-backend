@@ -88,7 +88,8 @@ class stability_report:
                 ax1.set_label('Time')
                 ax1.set_ylabel('Price', color='g')
 
-                gg = [('price_recovery_time', 'prc'),
+                gg = [('trade_every', 'te'),
+                    ('price_recovery_time', 'prc'),
                       ('volume_for_slippage_10_percents', 'vfs10p'), ('recovery_halflife_retail', 'rhr'),
                       ('stability_pool_initial_balance_ratio', 'spibr'), ('share_institutional', 'si'),
                       ('collateral', 'c'),

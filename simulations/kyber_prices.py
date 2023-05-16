@@ -108,6 +108,15 @@ class KyberPrices:
 
             url_to_send = 'https://pathfinder.1inch.io/v1.4/chain/'+str(self.chain_id)+'/router/v5/quotes?fromTokenAddress='+ str(token_in) + \
                             '&toTokenAddress='+str(token_out)+'&amount='+str(int(amount_in))+'&preset=maxReturnResult&gasPrice='+ str(current_gas_price)
+        if private_config.use_one_inch_fusion:
+            now = datetime.datetime.now()
+            print(fnName, 'using 1inch fusion')
+            if last_gas_price_fetch == None or (now - last_gas_price_fetch).total_seconds() > 120 : # fetch gas price every 2 minutes
+                current_gas_price = self.get_gas_price(self.chain_id)
+                last_gas_price_fetch = datetime.datetime.now()
+                print(fnName, 'updated gas price to', current_gas_price)
+            url_to_send = 'https://fusion.1inch.io/quoter/v1.0/' +str(self.chain_id)+ '/quote/receive?walletAddress=0x0000000000000000000000000000000000000000&fromTokenAddress=' + str(token_in) \
+                            + '&toTokenAddress=' + str(token_out) + '&amount=' + str(int(amount_in)) + '&enableEstimate=false'
         else:
             url_to_send = "https://api.1inch.io/v4.0/" + str(self.chain_id) + "/quote?" \
                 "fromTokenAddress=" + str(token_in) + "&" \
@@ -126,6 +135,8 @@ class KyberPrices:
                 response_amount_out = 0
                 if private_config.use_one_inch_pathfinder: 
                     response_amount_out = int(data['bestResult']['toTokenAmount']) / 10 ** self.decimals[self.inv_names[quote]]
+                if private_config.use_one_inch_fusion: 
+                    response_amount_out = int(data['toTokenAmount']) / 10 ** self.decimals[self.inv_names[quote]]
                 else:
                     response_amount_out = int(data["toTokenAmount"]) / 10 ** self.decimals[self.inv_names[quote]]
 

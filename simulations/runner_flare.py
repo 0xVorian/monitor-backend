@@ -12,28 +12,29 @@ def create_simulation_config(SITE_ID, c):
     fp = open("webserver" + os.path.sep + SITE_ID + os.path.sep + "simulation_configs.json", "w")
     print("create_simulation_config")
     data = {"json_time": time.time()}
-    for series_std_ratio in series_std_ratios:
-        key =  "AAA-" + str(series_std_ratio)
+    for trade_every in trade_everys:
+        key = "BTC-" + str(trade_every)
         new_c = copy.deepcopy(c)
-        new_c["series_std_ratio"] = str(series_std_ratio)
+        new_c["trade_every"] = int(trade_every)
         new_c["json_time"] = time.time()
         data[key] = new_c
     json.dump(data, fp)
 
 
-print_time_series = False
+print_time_series = True
 fast_mode = False
 ETH_PRICE = 1600
 total_jobs = 6
 
-series_std_ratios = [round(i,2)  for i in np.arange(0.1, 4, 0.1)]
+trade_everys = [1800, 1800 * 2, 1800 * 5, 1800 * 10]
+series_std_ratios = [0.76]
 volume_for_slippage_10_percentss = [i / ETH_PRICE for i in np.arange(100_000, 20_000_000 , 100_000)]
 l_factors =  [1]
 c = {
-    "series_std_ratio": [],
+    "series_std_ratio": 0.76,
     'volume_for_slippage_10_percentss': volume_for_slippage_10_percentss,
     "collaterals": [100_000_000 / ETH_PRICE],
-    'trade_every': 1800,
+    'trade_every': 0,
     'liquidation_incentives': [0],
     "stability_pool_initial_balances": [0],
     'share_institutionals': [0],
@@ -51,7 +52,7 @@ decimals = {}
 assets_aliases = {}
 collateral_factors = {}
 
-assets_to_simulate = ['AAA', 'BBB']
+assets_to_simulate = ['BTC', 'USDT']
 
 for a in assets_to_simulate:
     inv_names[a] = a
@@ -62,7 +63,7 @@ for a in assets_to_simulate:
     assets_aliases[a] = a
     collateral_factors[a] = 1
 
-SITE_ID = "generic"
+SITE_ID = "flare"
 SITE_ID = utils.get_site_id(SITE_ID)
 
 create_simulation_config(SITE_ID, c)

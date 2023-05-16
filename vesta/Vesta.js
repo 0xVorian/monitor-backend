@@ -178,9 +178,9 @@ class Vesta {
                 (await this.curvefiRouter.methods.get_best_rate(
                     Addresses.vstAddress,
                     Addresses.fraxAddress,
-                    toWei("1")
+                    toWei("1000")
                 ).call())["1"]
-            )
+            ).div(toBN("1000"))
 
         for(const market of this.assets) {
             console.log({market})
@@ -270,9 +270,9 @@ class Vesta {
                 (await this.curvefiRouter.methods.get_best_rate(
                     Addresses.vstAddress,
                     Addresses.fraxAddress,
-                    toWei("1")
+                    toWei("1000")
                 ).call())["1"]
-            )
+            ).div(toBN("1000"))
 
         this.lastUpdateTime = Math.floor(+new Date() / 1000)        
     }
