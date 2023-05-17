@@ -98,7 +98,18 @@ class KyberPrices:
         global current_gas_price
         global last_gas_price_fetch
 
-        if private_config.use_one_inch_pathfinder: 
+        api_version = 'fusion'
+        if hasattr(private_config, 'one_inch_api'):
+            print(fnName, 'selected api version from private config:', private_config.one_inch_api)
+            api_version = private_config.one_inch_api
+        else:
+            print(fnName, 'default api version for 1inch: fusion')
+
+        if api_version == 'fusion':
+            print(fnName, 'using 1inch fusion')
+            url_to_send = 'https://fusion.1inch.io/quoter/v1.0/' +str(self.chain_id)+ '/quote/receive?walletAddress=0x0000000000000000000000000000000000000000&fromTokenAddress=' + str(token_in) \
+                            + '&toTokenAddress=' + str(token_out) + '&amount=' + str(int(amount_in)) + '&enableEstimate=false'
+        elif api_version == 'pathfinder':
             now = datetime.datetime.now()
             print(fnName, 'using 1inch pathfinder')
             if last_gas_price_fetch == None or (now - last_gas_price_fetch).total_seconds() > 120 : # fetch gas price every 2 minutes
@@ -108,20 +119,13 @@ class KyberPrices:
 
             url_to_send = 'https://pathfinder.1inch.io/v1.4/chain/'+str(self.chain_id)+'/router/v5/quotes?fromTokenAddress='+ str(token_in) + \
                             '&toTokenAddress='+str(token_out)+'&amount='+str(int(amount_in))+'&preset=maxReturnResult&gasPrice='+ str(current_gas_price)
-        if private_config.use_one_inch_fusion:
-            now = datetime.datetime.now()
-            print(fnName, 'using 1inch fusion')
-            if last_gas_price_fetch == None or (now - last_gas_price_fetch).total_seconds() > 120 : # fetch gas price every 2 minutes
-                current_gas_price = self.get_gas_price(self.chain_id)
-                last_gas_price_fetch = datetime.datetime.now()
-                print(fnName, 'updated gas price to', current_gas_price)
-            url_to_send = 'https://fusion.1inch.io/quoter/v1.0/' +str(self.chain_id)+ '/quote/receive?walletAddress=0x0000000000000000000000000000000000000000&fromTokenAddress=' + str(token_in) \
-                            + '&toTokenAddress=' + str(token_out) + '&amount=' + str(int(amount_in)) + '&enableEstimate=false'
         else:
+            print(fnName, 'using basic 1inch api')
             url_to_send = "https://api.1inch.io/v4.0/" + str(self.chain_id) + "/quote?" \
                 "fromTokenAddress=" + str(token_in) + "&" \
                 "toTokenAddress=" + str(token_out) + "&" \
                 "amount=" + str(int(amount_in))
+            
         time.sleep(1)
         time_to_sleep = 1
         while True:
@@ -133,10 +137,10 @@ class KyberPrices:
                     response_amount_in = int(amount_in) / 10 ** 6
 
                 response_amount_out = 0
-                if private_config.use_one_inch_pathfinder: 
-                    response_amount_out = int(data['bestResult']['toTokenAmount']) / 10 ** self.decimals[self.inv_names[quote]]
-                if private_config.use_one_inch_fusion: 
+                if api_version == 'fusion': 
                     response_amount_out = int(data['toTokenAmount']) / 10 ** self.decimals[self.inv_names[quote]]
+                elif api_version == 'pathfinder': 
+                    response_amount_out = int(data['bestResult']['toTokenAmount']) / 10 ** self.decimals[self.inv_names[quote]]
                 else:
                     response_amount_out = int(data["toTokenAmount"]) / 10 ** self.decimals[self.inv_names[quote]]
 
@@ -151,10 +155,16 @@ class KyberPrices:
                 print(response.text)
                 error_data = response.json()
                 print(error_data)
-                if error_data['err'] == 'all quoteResults failed':
+                if 'err' in error_data and error_data['err'] == 'all quoteResults failed':
                     # if no route found from the API, return a very high number
                     print('all quoteResults failed returning -1')
                     return -1
+                if 'message' in error_data and error_data['message'] == 'insufficient amount':
+                        print('insufficient amount returning -1')
+                        return -1
+                if 'message' in error_data and error_data['message'] == 'Internal server error':
+                        print('Internal server error returning -1')
+                        return -1
                 time.sleep(time_to_sleep)
                 time_to_sleep += 3
 
