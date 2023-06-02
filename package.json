@@ -14,6 +14,7 @@
   },
   "homepage": "https://github.com/Risk-DAO/monitor-backend#readme",
   "dependencies": {
+    "@balancer-labs/sdk": "^1.0.4",
     "@dcspark/cardano-multiplatform-lib-nodejs": "^3.1.2",
     "@minswap/blockfrost-adapter": "^0.0.4",
     "@wingriders/dex-blockfrost-adapter": "^0.3.0",
@@ -22,8 +23,7 @@
     "dotenv": "^16.0.3",
     "ethers": "^5.7.2",
     "package.json": "^2.0.1",
-    "web3": "^1.7.4",
-    "@balancer-labs/sdk": "^1.0.4"
+    "web3": "^1.7.4"
   },
   "devDependencies": {
     "eslint": "^8.29.0"
