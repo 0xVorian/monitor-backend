@@ -251,38 +251,39 @@ def run_single_simulation(date_file_name,
         fig, ax1 = plt.subplots()
         fig.set_size_inches(12.5, 8.5)
         ax2 = ax1.twinx()
+        title = "Min USD CR: " + str(round(min_usd_ucr, 2)) + " Min Flare CR: " + str(round(min_flr_ucr, 2))
+        suptitle = "Score: " + str(round(report_df["open_liquidation"].sum() / len(report_df), 2))
+        plt.suptitle(suptitle)
+        plt.title(title)
 
-        plt.suptitle("Min USD CR: " + str(round(min_usd_ucr, 2)))
-        plt.title("Min Flare CR: " + str(round(min_flr_ucr, 2)))
-
-        x1 = ax1.plot(report_df["timestamp"], report_df["btc_usd_price"] / report_df["btc_usd_price"].max(), 'b-',
+        x1 = ax1.plot(report_df["timestamp"], report_df["btc_usd_price"] / report_df.iloc[0]["btc_usd_price"], 'b-',
                       label="Btc Usd Price")
 
-        x2 = ax1.plot(report_df["timestamp"], report_df["flare_btc_price"] / report_df["flare_btc_price"].max(), 'g-',
+        x2 = ax1.plot(report_df["timestamp"], (1 / report_df["flare_btc_price"]) / (1 / report_df.iloc[0]["flare_btc_price"]), 'g-',
                       label="Flare Btc Price")
 
-        x3 = ax2.plot(report_df["timestamp"], report_df["usd_ucr"], 'r-', label="Usd CR")
+        x3 = ax1.plot(report_df["timestamp"], report_df["usd_ucr"], 'r-', label="Usd CR")
 
-        x4 = ax2.plot(report_df["timestamp"], report_df["flare_ucr"], 'c-', label="Flare CR")
+        x4 = ax1.plot(report_df["timestamp"], report_df["flare_ucr"], 'c-', label="Flare CR")
 
         x5 = ax2.plot(report_df["timestamp"],
-                      report_df["debt_volume"] / report_df["debt_volume"].max(), 'm-',
+                      report_df["debt_volume"] / report_df.iloc[0]["debt_volume"], 'm-',
                       label="DebtVolume")
 
         x6 = ax2.plot(report_df["timestamp"],
-                      report_df["usd_collateral_volume"] / report_df["usd_collateral_volume"].max(), 'y-',
+                      (report_df["usd_collateral_volume"] / report_df["btc_usd_price"]) / report_df.iloc[0]["debt_volume"], 'y-',
                       label="UsdCollateralVolume")
 
         x7 = ax2.plot(report_df["timestamp"],
-                      report_df["flare_collateral_volume"] / report_df["flare_collateral_volume"].max(), 'b-',
+                      (report_df["flare_collateral_volume"] * report_df["flare_usd_price"] / report_df["btc_usd_price"]) / report_df.iloc[0]["debt_volume"], 'b-',
                       label="FlareCollateralVolume")
 
         x8 = ax2.plot(report_df["timestamp"],
-                      report_df["open_liquidation"] / report_df["open_liquidation"].max(),
+                      report_df["open_liquidation"] / report_df.iloc[0]["debt_volume"],
                       label="OpenLiquidations")
 
         x9 = ax2.plot(report_df["timestamp"],
-                      report_df["total_liquidations"] / report_df["total_liquidations"].max(),
+                      report_df["total_liquidations"] / report_df.iloc[0]["debt_volume"],
                       label="TotalLiquidations")
 
         lns = x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9
