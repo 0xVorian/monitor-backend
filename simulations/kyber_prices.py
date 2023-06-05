@@ -119,9 +119,17 @@ class KyberPrices:
 
             url_to_send = 'https://pathfinder.1inch.io/v1.4/chain/'+str(self.chain_id)+'/router/v5/quotes?fromTokenAddress='+ str(token_in) + \
                             '&toTokenAddress='+str(token_out)+'&amount='+str(int(amount_in))+'&preset=maxReturnResult&gasPrice='+ str(current_gas_price)
+        elif api_version == '1inch_enterprise':
+            print(fnName, 'using 1inch enterprise api')
+            if not hasattr(private_config, 'oneinch_enterprise_uri'):
+                raise Exception('NO ENTERPRISE URI IN PRIVATE CONFIG' )
+            url_to_send = private_config.oneinch_enterprise_uri + "/v5.0/" + str(self.chain_id) + "/quote?" \
+                "fromTokenAddress=" + str(token_in) + "&" \
+                "toTokenAddress=" + str(token_out) + "&" \
+                "amount=" + str(int(amount_in))
         else:
             print(fnName, 'using basic 1inch api')
-            url_to_send = "https://api.1inch.io/v4.0/" + str(self.chain_id) + "/quote?" \
+            url_to_send = "https://api.1inch.io/v5.0/" + str(self.chain_id) + "/quote?" \
                 "fromTokenAddress=" + str(token_in) + "&" \
                 "toTokenAddress=" + str(token_out) + "&" \
                 "amount=" + str(int(amount_in))
@@ -165,6 +173,10 @@ class KyberPrices:
                         return -1
                 if 'message' in error_data and error_data['message'] == 'Internal server error':
                         print('Internal server error returning -1')
+                        return -1
+                # "description":"insufficient liquidity"
+                if 'description' in error_data and error_data['description'] == 'insufficient liquidity':
+                        print('insufficient liquidity error returning -1')
                         return -1
                 time.sleep(time_to_sleep)
                 time_to_sleep += 3
