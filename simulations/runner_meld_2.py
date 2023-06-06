@@ -39,6 +39,18 @@ def find_std_ratio(base, quote):
     return test_rolling_std / eth_rolling_std
 
 
+def create_usd_volume_for_slippage(SITE_ID):
+    j = {"json_time":time.time()}
+    for base in assets_to_simulate:
+        j[base] = {}
+        for quote in assets_to_simulate:
+            if quote == base: continue
+            j[base][quote] = {"volume": 2_000_000 / ETH_PRICE}
+
+    fp = open("webserver" + os.path.sep + SITE_ID + os.path.sep + "usd_volume_for_slippage.json", "w")
+    json.dump(j, fp)
+
+
 def create_simulation_config(SITE_ID, c):
     fp = open("webserver" + os.path.sep + SITE_ID + os.path.sep + "simulation_configs.json", "w")
     print("create_simulation_config")
@@ -50,23 +62,21 @@ def create_simulation_config(SITE_ID, c):
             new_c = copy.deepcopy(c)
             new_c["series_std_ratio"] = find_std_ratio(base, quote)
             if base == "MELD" or quote == "MELD":
-                new_c["price_recovery_times"] = [2]
+                new_c["price_recovery_times"] = [14]
             new_c["json_time"] = time.time()
             data[key] = new_c
     json.dump(data, fp)
 
 
-print_time_series = False
+print_time_series = True
 fast_mode = False
 ETH_PRICE = 1600
 total_jobs = 6
-
 
 # ADA, AVAX, ETH, MATIC, BNB, BTC, MELD
 # slippage for all 10% = $2m (both sides)
 # caps = $5m, $20m, $100m
 # half life for meld = 1 week
-
 
 volume_for_slippage_10_percentss = [2_000_000 / ETH_PRICE]
 l_factors = [0.25, 0.5, 1, 1.5, 2]
@@ -76,7 +86,7 @@ c = {
     'volume_for_slippage_10_percentss': volume_for_slippage_10_percentss,
     "collaterals": [5_000_000 / ETH_PRICE, 20_000_000 / ETH_PRICE, 100_000_000 / ETH_PRICE],
     'trade_every': 1800,
-    'liquidation_incentives': [0],
+    'liquidation_incentives': [0.1],
     "stability_pool_initial_balances": [0],
     'share_institutionals': [0],
     'recovery_halflife_retails': [0],
@@ -107,6 +117,8 @@ for a in assets_to_simulate:
 SITE_ID = "meld_2"
 SITE_ID = utils.get_site_id(SITE_ID)
 
+create_usd_volume_for_slippage(SITE_ID)
 create_simulation_config(SITE_ID, c)
 base_runner.create_simulation_results(SITE_ID, ETH_PRICE, total_jobs, collateral_factors, inv_names, print_time_series, fast_mode)
 base_runner.create_risk_params(SITE_ID, ETH_PRICE, total_jobs, l_factors, print_time_series)
+utils.publish_results(SITE_ID)

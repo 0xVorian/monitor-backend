@@ -137,6 +137,11 @@ def fix_usd_volume_for_slippage():
     json.dump(current_data, fp)
     fp.close()
 
+def get_supply_borrow():
+    supply_borrow_file = open(supply_borrow_json_file)
+    supply_borrow = json.load(supply_borrow_file)
+    supply_borrow_file.close()
+    return supply_borrow
 
 def get_alert_params():
     alert_params = []
@@ -149,6 +154,7 @@ def get_alert_params():
         "oracle_threshold": 3, # oracle threshold is always in absolute
         "slippage_threshold": 10, # liquidity threshold before sending alert
         "only_negative": False, # only send liquidity alert if the new volume < old volume
+        "supply_borrow_threshold": 1, # supply/borrow threshold before sending alert
     })
 
     # REAL AGAVE ALERT CHANNEL: send only oracle > 3% and liquidity alerts where <-50%
@@ -159,6 +165,7 @@ def get_alert_params():
         "oracle_threshold": 3, # oracle threshold is always in absolute
         "slippage_threshold": 50, # liquidity threshold before sending alert
         "only_negative": True, # only send liquidity alert if the new volume < old volume
+        "supply_borrow_threshold": 10, # supply/borrow threshold before sending alert
     })
     
     # PRIVATE AGAVE CHANNEL: alerts when liquidity <-10%
@@ -169,6 +176,7 @@ def get_alert_params():
         "oracle_threshold": 3, # oracle threshold is always in absolute
         "slippage_threshold": 10, # liquidity threshold before sending alert
         "only_negative": True, # only send liquidity alert if the new volume < old volume
+        "supply_borrow_threshold": 1, # supply/borrow threshold before sending alert
     })
 
     return alert_params
@@ -176,10 +184,11 @@ def get_alert_params():
 lending_platform_json_file = ".." + os.path.sep + "Agave" + os.path.sep + "data.json"
 oracle_json_file = ".." + os.path.sep + "Agave" + os.path.sep + "oracle.json"
 balancer_volume_json_file = ".." + os.path.sep + "Agave" + os.path.sep + "balancer_volume_for_slippage.json"
+supply_borrow_json_file = ".." + os.path.sep + "Agave" + os.path.sep + "agave_supply_borrow.json"
 
-assets_to_simulate = ['USDC', 'WXDAI', 'LINK', 'GNO', 'WBTC', 'WETH', 'FOX', "USDT", "EURe"]
+assets_to_simulate = ['USDC', 'WXDAI', 'LINK', 'GNO', 'WBTC', 'WETH', 'FOX', "USDT", "EURe", "wstETH"]
 assets_aliases = {'USDC': 'USDC', 'WXDAI': 'DAI', 'LINK': 'LINK', 'GNO': 'GNO', 'WBTC': 'BTC', 'WETH': 'ETH',
-                  'FOX': 'FOX', "USDT":"USDC", "EURe":"EUR"}
+                  'FOX': 'FOX', "USDT":"USDC", "EURe":"EUR", "wstETH": "wstETH"}
 
 ETH_PRICE = 1600
 print_time_series = False
@@ -298,9 +307,10 @@ if __name__ == '__main__':
                 d1 = utils.get_file_time(oracle_json_file)
                 d1 = min(last_update_time, d1)
 
+                current_supply_borrow = get_supply_borrow()
                 alert_params = get_alert_params()
                 print('alert_params', alert_params)
-                old_alerts = utils.compare_to_prod_and_send_alerts(old_alerts, d1, "agave", "4", SITE_ID, alert_params, send_alerts, ignore_list= ignore_list)
+                old_alerts = utils.compare_to_prod_and_send_alerts(old_alerts, d1, "agave", "4", SITE_ID, alert_params, send_alerts, ignore_list= ignore_list, current_supply_borrow= current_supply_borrow)
                 print('old_alerts', old_alerts)
                 endDate =  round(datetime.datetime.now().timestamp())
                 utils.record_monitoring_data({
@@ -313,7 +323,7 @@ if __name__ == '__main__':
                 time.sleep(30 * 60)
             else:
                 base_runner.create_assets_std_ratio_information(SITE_ID,
-                                                                ['DAI', 'USDC', 'LINK', 'GNO', 'BTC', 'ETH', 'FOX', 'EUR'],
+                                                                ['DAI', 'USDC', 'LINK', 'GNO', 'BTC', 'ETH', 'FOX', 'EUR', 'wstETH'],
                                                                 [("04", "2022"), ("05", "2022"), ("06", "2022")])
                 create_simulation_config(SITE_ID, c, ETH_PRICE, assets_to_simulate, assets_aliases, liquidation_incentive,
                                         inv_names)

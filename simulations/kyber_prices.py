@@ -98,12 +98,12 @@ class KyberPrices:
         global current_gas_price
         global last_gas_price_fetch
 
-        api_version = 'fusion'
+        api_version = 'pathfinder'
         if hasattr(private_config, 'one_inch_api'):
             print(fnName, 'selected api version from private config:', private_config.one_inch_api)
             api_version = private_config.one_inch_api
         else:
-            print(fnName, 'default api version for 1inch: fusion')
+            print(fnName, 'default api version for 1inch:', api_version)
 
         if api_version == 'fusion':
             print(fnName, 'using 1inch fusion')
@@ -119,9 +119,17 @@ class KyberPrices:
 
             url_to_send = 'https://pathfinder.1inch.io/v1.4/chain/'+str(self.chain_id)+'/router/v5/quotes?fromTokenAddress='+ str(token_in) + \
                             '&toTokenAddress='+str(token_out)+'&amount='+str(int(amount_in))+'&preset=maxReturnResult&gasPrice='+ str(current_gas_price)
+        elif api_version == '1inch_enterprise':
+            print(fnName, 'using 1inch enterprise api')
+            if not hasattr(private_config, 'oneinch_enterprise_uri'):
+                raise Exception('NO ENTERPRISE URI IN PRIVATE CONFIG' )
+            url_to_send = private_config.oneinch_enterprise_uri + "/v5.0/" + str(self.chain_id) + "/quote?" \
+                "fromTokenAddress=" + str(token_in) + "&" \
+                "toTokenAddress=" + str(token_out) + "&" \
+                "amount=" + str(int(amount_in))
         else:
             print(fnName, 'using basic 1inch api')
-            url_to_send = "https://api.1inch.io/v4.0/" + str(self.chain_id) + "/quote?" \
+            url_to_send = "https://api.1inch.io/v5.0/" + str(self.chain_id) + "/quote?" \
                 "fromTokenAddress=" + str(token_in) + "&" \
                 "toTokenAddress=" + str(token_out) + "&" \
                 "amount=" + str(int(amount_in))
@@ -130,7 +138,8 @@ class KyberPrices:
         time_to_sleep = 1
         while True:
             try:
-                response = requests.get(url_to_send, headers= {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:77.0) Gecko/20100101 Firefox/77.0'})
+                response = requests.get(url_to_send, headers= {'Referer': 'https://app.1inch.io',
+                                                               'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:77.0) Gecko/20100101 Firefox/77.0'})
                 data = response.json()
                 response_amount_in = int(amount_in) / 10 ** self.decimals[self.inv_names[base]]
                 if base == "VST":
@@ -164,6 +173,10 @@ class KyberPrices:
                         return -1
                 if 'message' in error_data and error_data['message'] == 'Internal server error':
                         print('Internal server error returning -1')
+                        return -1
+                # "description":"insufficient liquidity"
+                if 'description' in error_data and error_data['description'] == 'insufficient liquidity':
+                        print('insufficient liquidity error returning -1')
                         return -1
                 time.sleep(time_to_sleep)
                 time_to_sleep += 3
