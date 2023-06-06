@@ -280,7 +280,17 @@ if __name__ == '__main__':
     print("ALERT MODE", alert_mode)
     send_alerts = len(sys.argv) > 3
     print("SEND ALERTS", send_alerts)
+    
     while True:
+        startDate = round(datetime.datetime.now().timestamp())
+        if alert_mode:
+            # if in alert mode, record monitoring data
+            utils.record_monitoring_data({
+                "name": 'Vesta',
+                "status": "running",
+                "lastStart": startDate,
+                'runEvery': 30 * 60
+            })
         if os.path.sep in SITE_ID:
             SITE_ID = SITE_ID.split(os.path.sep)[0]
 
@@ -304,9 +314,9 @@ if __name__ == '__main__':
             print("FAST ORACLE")
 
         data["collateralFactors"] = data["collateralFactors"].replace("}",
-                                                                      ",'0x64343594Ab9b56e99087BfA6F2335Db24c2d1F17':0}")
+                                                                    ",'0x64343594Ab9b56e99087BfA6F2335Db24c2d1F17':0}")
         data["totalCollateral"] = data["totalCollateral"].replace("}",
-                                                                  ",'0x64343594Ab9b56e99087BfA6F2335Db24c2d1F17':'0'}")
+                                                                ",'0x64343594Ab9b56e99087BfA6F2335Db24c2d1F17':'0'}")
         data["totalBorrows"] = data["totalBorrows"].replace("}", ",'0x64343594Ab9b56e99087BfA6F2335Db24c2d1F17':'0'}")
 
 
@@ -350,11 +360,11 @@ if __name__ == '__main__':
                                                                 underlying)
         fix_lending_platform_current_information(curveFraxBalance, curveVstBalance)
         base_runner.create_account_information(SITE_ID, users_data, totalAssetCollateral, totalAssetBorrow, inv_names,
-                                               assets_liquidation_data, True)
+                                            assets_liquidation_data, True)
         create_dex_information(SITE_ID)
         create_stability_pool_information(SITE_ID, stabilityPoolVstBalance, stabilityPoolGemBalance,
-                                          bprotocolVstBalance,
-                                          bprotocolGemBalance)
+                                        bprotocolVstBalance,
+                                        bprotocolGemBalance)
         base_runner.create_oracle_information(SITE_ID, prices, chain_id, names, assets_aliases, kp.get_price)
         base_runner.create_whale_accounts_information(SITE_ID, users_data, assets_to_simulate, True)
         base_runner.create_open_liquidations_information(SITE_ID, users_data, assets_to_simulate)
@@ -383,22 +393,29 @@ if __name__ == '__main__':
             alert_params = get_alert_params()
             print('alert_params', alert_params)
             old_alerts = utils.compare_to_prod_and_send_alerts(old_alerts, d1, "vesta", "2", SITE_ID, alert_params, send_alerts)
+            endDate =  round(datetime.datetime.now().timestamp())
+            utils.record_monitoring_data({
+                "name": 'Vesta',
+                "status": "success",
+                "lastEnd": endDate,
+                "lastDuration": endDate - startDate,
+            })
             print("Alert Mode.Sleeping For 30 Minutes")
             time.sleep(30 * 60)
         else:
             base_runner.create_assets_std_ratio_information(SITE_ID, ["ETH", "OHM", "DPX", "GMX", "USDT", "GLP"],
                                                             [("09", "2022"), ("10", "2022"), ("11", "2022")], True)
             create_simulation_config(SITE_ID, c, ETH_PRICE, assets_to_simulate, assets_aliases, liquidation_incentive,
-                                     inv_names)
+                                    inv_names)
             base_runner.create_simulation_results(SITE_ID, ETH_PRICE, total_jobs, collateral_factors, inv_names,
-                                                  print_time_series, fast_mode)
+                                                print_time_series, fast_mode)
             base_runner.create_risk_params(SITE_ID, ETH_PRICE, total_jobs, l_factors, print_time_series)
             fix_risk_params()
 
             base_runner.create_current_simulation_risk(SITE_ID, ETH_PRICE, users_data, assets_to_simulate,
-                                                       assets_aliases,
-                                                       collateral_factors, inv_names, liquidation_incentive, total_jobs,
-                                                       True)
+                                                    assets_aliases,
+                                                    collateral_factors, inv_names, liquidation_incentive, total_jobs,
+                                                    True)
 
             create_glp_data(glp_data)
             n = datetime.datetime.now().timestamp()

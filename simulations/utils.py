@@ -299,7 +299,7 @@ def send_telegram_table(bot_id, chat_id, headers, rows):
     send_telegram_alert(bot_id, chat_id, f'```{table}```', is_markdown=True)
 
 
-def compare_to_prod_and_send_alerts(old_alerts, data_time, name, base_SITE_ID, current_SITE_ID, alert_params, send_alerts=False, ignore_list=[]):
+def compare_to_prod_and_send_alerts(old_alerts, data_time, name, base_SITE_ID, current_SITE_ID, alert_params, send_alerts=False, ignore_list=[], current_supply_borrow=None):
     print("comparing to prod", name)
     prod_version = get_prod_version(name)
     print('retrieved prod_version:', prod_version)
@@ -482,7 +482,119 @@ def compare_to_prod_and_send_alerts(old_alerts, data_time, name, base_SITE_ID, c
                     print("Sending To TG")
                     send_telegram_alert(alert_param['tg_bot_id'], alert_param['tg_channel_id'], message)
 
+    alert_sent = False
+    if current_supply_borrow != None:
+        print('starting supply / borrow comparison')
+        prod_supply_borrow = get_prod_supply_borrow(base_SITE_ID, prod_version)
+        
+        # compare supply
+        for token_symbol in current_supply_borrow['currentSupply']:
+            current_supply_usd = current_supply_borrow['currentSupply'][token_symbol]
+            prod_supply_usd = prod_supply_borrow['supply'][token_symbol]
+            if current_supply_usd == 0:
+                continue # avoid division per 0
+            pct_diff = (current_supply_usd - prod_supply_usd) / current_supply_usd
+            print(token_symbol, 'current supply:', current_supply_usd, 'prod supply:', prod_supply_usd)
+            print(token_symbol, 'diff:', pct_diff)
+            
+            diff_compare_threshold = abs(pct_diff) * 100
+            for alert_param in alert_params:
+                threshold = alert_param['supply_borrow_threshold']
+                if diff_compare_threshold > threshold:
+                    alert_sent = True
+                    message = f"{name}" \
+                            f"\n{time_alert}" \
+                            f"\n{token_symbol}" \
+                            f"\nLast simulation supply: ${prod_supply_usd}" \
+                            f"\nCurrent supply: ${current_supply_usd}" \
+                            f"\ndiff: {round(pct_diff*100.0, 2)}%"
+                        
+                    print(message)
+                    if send_alerts:
+                        if alert_param['is_default']:
+                            print("Sending to Default TG")
+                            send_telegram_alert(alert_param['tg_bot_id'], alert_param['tg_channel_id'], message)
+                        else:
+                            message_key = f'{alert_param["tg_channel_id"]}.{name}.supply.diff.{token_symbol}'
+                            last_value = 0 if message_key not in old_alerts else old_alerts[message_key]
+                            if message_key not in old_alerts or abs(old_alerts[message_key]) * 1.3 < abs(pct_diff) \
+                                    or np.sign(old_alerts[message_key]) != np.sign(pct_diff):
+                                print(f"Sending to {alert_param['tg_channel_id']} TG", message_key)
+                                send_telegram_alert(alert_param['tg_bot_id'], alert_param['tg_channel_id'], message)
+                                if message_key not in old_alerts:
+                                    old_alerts[message_key] = 0
+                                old_alerts[message_key] = pct_diff
+
+        # compare borrow
+        for token_symbol in current_supply_borrow['currentBorrow']:
+            current_borrow_usd = current_supply_borrow['currentBorrow'][token_symbol]
+            prod_borrow_usd = prod_supply_borrow['borrow'][token_symbol]
+            if current_borrow_usd == 0:
+                continue # avoid division per 0
+            pct_diff = (current_borrow_usd - prod_borrow_usd) / current_borrow_usd
+            print(token_symbol, 'current borrow:', current_borrow_usd, 'prod borrow:', prod_borrow_usd)
+            print(token_symbol, 'diff:', pct_diff)
+            
+            diff_compare_threshold = abs(pct_diff) * 100
+            for alert_param in alert_params:
+                threshold = alert_param['supply_borrow_threshold']
+                if diff_compare_threshold > threshold:
+                    alert_sent = True
+                    message = f"{name}" \
+                            f"\n{time_alert}" \
+                            f"\n{token_symbol}" \
+                            f"\nLast simulation borrow: ${prod_borrow_usd}" \
+                            f"\nCurrent borrow: ${current_borrow_usd}" \
+                            f"\ndiff: {round(pct_diff*100.0, 2)}%"
+                        
+                    print(message)
+                    
+                    if send_alerts:
+                        if alert_param['is_default']:
+                            print("Sending to Default TG")
+                            send_telegram_alert(alert_param['tg_bot_id'], alert_param['tg_channel_id'], message)
+                        else:
+                            message_key = f'{alert_param["tg_channel_id"]}.{name}.borrow.diff.{token_symbol}'
+                            last_value = 0 if message_key not in old_alerts else old_alerts[message_key]
+                            if message_key not in old_alerts or abs(old_alerts[message_key]) * 1.3 < abs(pct_diff) \
+                                    or np.sign(old_alerts[message_key]) != np.sign(pct_diff):
+                                print(f"Sending to {alert_param['tg_channel_id']} TG", message_key)
+                                send_telegram_alert(alert_param['tg_bot_id'], alert_param['tg_channel_id'], message)
+                                if message_key not in old_alerts:
+                                    old_alerts[message_key] = 0
+                                old_alerts[message_key] = pct_diff
+
+    if not alert_sent:
+        for alert_param in alert_params:
+            if alert_param['is_default']:
+                message = f"{name}" \
+                        f"\n{time_alert}" \
+                        f"\Supply/Borrow are fine."
+                print(message)
+                if send_alerts:
+                    print("Sending To TG")
+                    send_telegram_alert(alert_param['tg_bot_id'], alert_param['tg_channel_id'], message)
+
     return old_alerts
+
+def get_prod_supply_borrow(site_id, prod_version):
+    prod_supply_borrow = {
+        'supply': {},
+        'borrow': {}
+    }
+    accounts_file = json.loads(get_git_json_file(site_id, prod_version, "accounts.json"))
+    for token in accounts_file:
+        if token == 'json_time': 
+            continue
+        
+        token_collateral = accounts_file[token]['total_collateral']
+        token_debt = accounts_file[token]['total_debt']
+        print(token, 'total collateral:', token_collateral)
+        print(token, 'total debt', token_debt)
+        prod_supply_borrow['supply'][token] = float(token_collateral)
+        prod_supply_borrow['borrow'][token] = float(token_debt)
+
+    return prod_supply_borrow
 
 def get_prod_version(name):
     gh = Github(login_or_token=private_config.git_version_token, base_url='https://api.github.com')
@@ -705,6 +817,22 @@ def create_production_slippage_graph(SITE_ID, lending_name):
 
     plt.legend(loc="lower left")
     plt.savefig("results\\" + lending_name + ".slippage.jpg")
+
+def record_monitoring_data(monitoring_data):
+    if not hasattr(private_config, 'monitoring_uri') or private_config.monitoring_uri == '':
+        print('record_monitoring_data: monitoring_uri not found or empty in private_config. Will not record monitoring')
+    else:
+        try:
+            monitoring_data['type'] = 'Liquidity Monitoring'
+            monitoring_data["lastUpdate"] = round(datetime.datetime.now().timestamp())
+            print('record_monitoring_data: sending monitoring data to monitoring api')
+            print('record_monitoring_data:', monitoring_data)
+            monitoring_response = requests.post(private_config.monitoring_uri, json=monitoring_data)
+            print('record_monitoring_data: push result:', monitoring_response.status_code, monitoring_response.text)
+        except Exception as error:
+            err_msg = 'An exception occurred while pushing data to monitoring api: {}'.format(error)
+            print(err_msg)
+
 
 def convert_name(base_name):
     if base_name == "WXDAI":

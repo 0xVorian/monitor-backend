@@ -140,6 +140,16 @@ if __name__ == '__main__':
     print("SEND ALERTS", send_alerts)
 
     while True:
+        startDate = round(datetime.datetime.now().timestamp())
+        if alert_mode:
+            # if in alert mode, record monitoring data
+            utils.record_monitoring_data({
+                "name": 'Nervos',
+                "status": "running",
+                "lastStart": startDate,
+                'runEvery': 30 * 60
+            })
+
         if os.path.sep in SITE_ID:
             SITE_ID = SITE_ID.split(os.path.sep)[0]
 
@@ -181,7 +191,7 @@ if __name__ == '__main__':
             users_data["nl_user_debt"] += users_data["NL_DEBT_" + base_to_simulation]
 
         ETH = "0x9E858A7aAEDf9FDB1026Ab1f77f627be2791e98A"
-        BNB =  "0xBAdb9b25150Ee75bb794198658A4D0448e43E528"
+        BNB = "0xBAdb9b25150Ee75bb794198658A4D0448e43E528"
         USDC = "0x186181e225dc1Ad85a4A94164232bD261e351C33"
         WCKB = "0xC296F806D15e97243A08334256C705bA5C5754CD"
         USDT = "0x8E019acb11C7d17c26D334901fA2ac41C1f44d50"
@@ -189,14 +199,13 @@ if __name__ == '__main__':
         CKB = "0x7538C85caE4E4673253fFd2568c1F1b48A71558a"
         
         allTokens = [ETH, BNB, USDC, WCKB, USDT, BTC, CKB]
-        #allTokens = [ETH, USDC, WCKB, USDT, BTC, CKB]
         ap = aggregator.AggregatorPrices(aggregator_path, inv_names, underlying, inv_underlying, decimals, allTokens)
         base_runner.create_overview(SITE_ID, users_data, totalAssetCollateral, totalAssetBorrow)
         base_runner.create_lending_platform_current_information(SITE_ID, last_update_time, names, inv_names, decimals,
                                                                 prices, collateral_factors, collateral_caps,
                                                                 borrow_caps, underlying)
         base_runner.create_account_information(SITE_ID, users_data, totalAssetCollateral, totalAssetBorrow, inv_names,
-                                               assets_liquidation_data)
+                                            assets_liquidation_data)
         base_runner.create_oracle_information(SITE_ID, prices, chain_id, names, cex_aliases, ap.get_price)
         create_dex_information()
         base_runner.create_whale_accounts_information(SITE_ID, users_data, assets_to_simulate)
@@ -210,20 +219,27 @@ if __name__ == '__main__':
             alert_params = get_alert_params()
             print('alert_params', alert_params)
             old_alerts = utils.compare_to_prod_and_send_alerts(old_alerts, d1, "nervos", "1", SITE_ID, alert_params, send_alerts)
+            endDate =  round(datetime.datetime.now().timestamp())
+            utils.record_monitoring_data({
+                "name": 'Nervos',
+                "status": "success",
+                "lastEnd": endDate,
+                "lastDuration": endDate - startDate,
+            })
             print("Alert Mode.Sleeping For 30 Minutes")
             time.sleep(30 * 60)
         else:
             base_runner.create_assets_std_ratio_information(SITE_ID, ["ETH", "BNB", "BTC", "CKB", "USDC"],
                                                             [("04", "2022"), ("05", "2022"), ("06", "2022")])
             create_simulation_config(SITE_ID, c, ETH_PRICE, assets_to_simulate, assets_aliases, liquidation_incentive,
-                                     inv_names)
+                                    inv_names)
             base_runner.create_simulation_results(SITE_ID, ETH_PRICE, total_jobs, collateral_factors, inv_names,
-                                                  print_time_series, fast_mode)
+                                                print_time_series, fast_mode)
             base_runner.create_risk_params(SITE_ID, ETH_PRICE, total_jobs, l_factors, print_time_series)
             base_runner.create_current_simulation_risk(SITE_ID, ETH_PRICE, users_data, assets_to_simulate,
-                                                       assets_aliases,
-                                                       collateral_factors, inv_names, liquidation_incentive, total_jobs,
-                                                       False)
+                                                    assets_aliases,
+                                                    collateral_factors, inv_names, liquidation_incentive, total_jobs,
+                                                    False)
 
             n = datetime.datetime.now().timestamp()
             d1 = utils.get_file_time(oracle_json_file)
