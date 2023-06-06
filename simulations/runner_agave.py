@@ -154,7 +154,7 @@ def get_alert_params():
         "oracle_threshold": 3, # oracle threshold is always in absolute
         "slippage_threshold": 10, # liquidity threshold before sending alert
         "only_negative": False, # only send liquidity alert if the new volume < old volume
-        "supply_borrow_threshold": 1, # supply/borrow threshold before sending alert
+        "supply_borrow_threshold": 10, # supply/borrow threshold before sending alert
     })
 
     # REAL AGAVE ALERT CHANNEL: send only oracle > 3% and liquidity alerts where <-50%
@@ -176,7 +176,7 @@ def get_alert_params():
         "oracle_threshold": 3, # oracle threshold is always in absolute
         "slippage_threshold": 10, # liquidity threshold before sending alert
         "only_negative": True, # only send liquidity alert if the new volume < old volume
-        "supply_borrow_threshold": 1, # supply/borrow threshold before sending alert
+        "supply_borrow_threshold": 10, # supply/borrow threshold before sending alert
     })
 
     return alert_params
