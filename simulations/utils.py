@@ -491,6 +491,8 @@ def compare_to_prod_and_send_alerts(old_alerts, data_time, name, base_SITE_ID, c
         for token_symbol in current_supply_borrow['currentSupply']:
             current_supply_usd = current_supply_borrow['currentSupply'][token_symbol]
             prod_supply_usd = prod_supply_borrow['supply'][token_symbol]
+            if prod_supply_usd == 0:
+                continue # avoid division per 0
             pct_diff = (prod_supply_usd - current_supply_usd) / prod_supply_usd
             print(token_symbol, 'current supply:', current_supply_usd, 'prod supply:', prod_supply_usd)
             print(token_symbol, 'diff:', pct_diff)
@@ -503,9 +505,9 @@ def compare_to_prod_and_send_alerts(old_alerts, data_time, name, base_SITE_ID, c
                     message = f"{name}" \
                             f"\n{time_alert}" \
                             f"\n{token_symbol}" \
-                            f"\Prod supply / current supply" \
-                            f"\${prod_supply_usd} / ${current_supply_usd}" \
-                            f"\diff: {round(abs(pct_diff*100.0), 2)}%"
+                            f"\Last simulation supply: ${prod_supply_usd}" \
+                            f"\nCurrent supply: ${current_supply_usd}" \
+                            f"\ndiff: {round(pct_diff*100.0, 2)}%"
                         
                     print(message)
                     if send_alerts:
@@ -518,8 +520,7 @@ def compare_to_prod_and_send_alerts(old_alerts, data_time, name, base_SITE_ID, c
                             if message_key not in old_alerts or abs(old_alerts[message_key]) * 1.3 < abs(pct_diff) \
                                     or np.sign(old_alerts[message_key]) != np.sign(pct_diff):
                                 print(f"Sending to {alert_param['tg_channel_id']} TG", message_key)
-                                send_telegram_alert(alert_param['tg_bot_id'], alert_param['tg_channel_id'],
-                                                    message + "\nLast value:" + str(round(last_value, 2)))
+                                send_telegram_alert(alert_param['tg_bot_id'], alert_param['tg_channel_id'], message)
                                 if message_key not in old_alerts:
                                     old_alerts[message_key] = 0
                                 old_alerts[message_key] = pct_diff
@@ -528,6 +529,8 @@ def compare_to_prod_and_send_alerts(old_alerts, data_time, name, base_SITE_ID, c
         for token_symbol in current_supply_borrow['currentBorrow']:
             current_borrow_usd = current_supply_borrow['currentBorrow'][token_symbol]
             prod_borrow_usd = prod_supply_borrow['borrow'][token_symbol]
+            if prod_borrow_usd == 0:
+                continue # avoid division per 0
             pct_diff = (prod_borrow_usd - current_borrow_usd) / prod_borrow_usd
             print(token_symbol, 'current borrow:', current_borrow_usd, 'prod borrow:', prod_borrow_usd)
             print(token_symbol, 'diff:', pct_diff)
@@ -540,9 +543,9 @@ def compare_to_prod_and_send_alerts(old_alerts, data_time, name, base_SITE_ID, c
                     message = f"{name}" \
                             f"\n{time_alert}" \
                             f"\n{token_symbol}" \
-                            f"\Prod borrow / current borrow" \
-                            f"\${prod_borrow_usd} / ${current_borrow_usd}" \
-                            f"\diff: {round(abs(pct_diff*100.0), 2)}%"
+                            f"\Last simulation borrow: ${prod_borrow_usd}" \
+                            f"\nCurrent borrow: ${current_borrow_usd}" \
+                            f"\ndiff: {round(pct_diff*100.0, 2)}%"
                         
                     print(message)
                     
@@ -556,8 +559,7 @@ def compare_to_prod_and_send_alerts(old_alerts, data_time, name, base_SITE_ID, c
                             if message_key not in old_alerts or abs(old_alerts[message_key]) * 1.3 < abs(pct_diff) \
                                     or np.sign(old_alerts[message_key]) != np.sign(pct_diff):
                                 print(f"Sending to {alert_param['tg_channel_id']} TG", message_key)
-                                send_telegram_alert(alert_param['tg_bot_id'], alert_param['tg_channel_id'],
-                                                    message + "\nLast value:" + str(round(last_value, 2)))
+                                send_telegram_alert(alert_param['tg_bot_id'], alert_param['tg_channel_id'], message)
                                 if message_key not in old_alerts:
                                     old_alerts[message_key] = 0
                                 old_alerts[message_key] = pct_diff
@@ -589,8 +591,8 @@ def get_prod_supply_borrow(site_id, prod_version):
         token_debt = accounts_file[token]['total_debt']
         print(token, 'total collateral:', token_collateral)
         print(token, 'total debt', token_debt)
-        prod_supply_borrow['supply'][token] = token_collateral
-        prod_supply_borrow['borrow'][token] = token_collateral
+        prod_supply_borrow['supply'][token] = float(token_collateral)
+        prod_supply_borrow['borrow'][token] = float(token_debt)
 
     return prod_supply_borrow
 
