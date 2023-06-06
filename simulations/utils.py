@@ -15,7 +15,6 @@ import matplotlib.dates as mdates
 import prettytable as pt
 import math
 import private_config
-from pymongo import MongoClient
 from sklearn.linear_model import LinearRegression
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeRegressor
@@ -820,24 +819,20 @@ def create_production_slippage_graph(SITE_ID, lending_name):
     plt.savefig("results\\" + lending_name + ".slippage.jpg")
 
 def record_monitoring_data(monitoring_data):
-    if not hasattr(private_config, 'mongo_db_uri') or private_config.mongo_db_uri == '':
-        print('record_monitoring_data: mongo_db_uri or uri empty in private_config. Will not record monitoring')
+    if not hasattr(private_config, 'monitoring_uri') or private_config.monitoring_uri == '':
+        print('record_monitoring_data: monitoring_uri not found or empty in private_config. Will not record monitoring')
     else:
-        client = MongoClient(private_config.mongo_db_uri)
-        monit_db = client['overwatch']['monitoring']
+        try:
+            monitoring_data['type'] = 'Liquidity Monitoring'
+            monitoring_data["lastUpdate"] = round(datetime.datetime.now().timestamp())
+            print('record_monitoring_data: sending monitoring data to monitoring api')
+            print('record_monitoring_data:', monitoring_data)
+            monitoring_response = requests.post(private_config.monitoring_uri, json=monitoring_data)
+            print('record_monitoring_data: push result:', monitoring_response.status_code, monitoring_response.text)
+        except Exception as error:
+            err_msg = 'An exception occurred while pushing data to monitoring api: {}'.format(error)
+            print(err_msg)
 
-        monitoring_data['type'] = 'Liquidity Monitoring'
-        monitoring_data["lastUpdate"] = round(datetime.datetime.now().timestamp())
-
-        filter = {
-            "type": monitoring_data['type'],
-            "name": monitoring_data["name"],
-        }
-
-        new_monit_data = { "$set": monitoring_data }
-        update_result = monit_db.update_one(filter, new_monit_data, True)
-        print('record_monitoring_data: update result:', update_result.modified_count)
-        client.close()
 
 def convert_name(base_name):
     if base_name == "WXDAI":
