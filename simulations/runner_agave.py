@@ -290,6 +290,7 @@ if __name__ == '__main__':
                     print('Adding', tokenName, 'to the ignore list because collateralCap:', tokenCap)
                     ignore_list.append(tokenName)
             
+            ignore_list.append('wstETH')
             # for every tokens in the ignore list, delete entry in inv_names before calling 'create_usd_volumes_for_slippage'
             # it will remove them from the data fetch and will greatly speed up the alert process
             # the slippage data for these tokens will not be needed anyway as we will ignore them

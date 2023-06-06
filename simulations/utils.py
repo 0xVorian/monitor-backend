@@ -402,6 +402,8 @@ def compare_to_prod_and_send_alerts(old_alerts, data_time, name, base_SITE_ID, c
 
     for market in oracle_file:
         if market == "json_time": continue
+        if market in ignore_list: continue
+
         oracle = float(oracle_file[market]["oracle"])
         # if oracle is 0 (or less?), don't need to check
         if oracle <= 0: continue
@@ -489,6 +491,7 @@ def compare_to_prod_and_send_alerts(old_alerts, data_time, name, base_SITE_ID, c
         
         # compare supply
         for token_symbol in current_supply_borrow['currentSupply']:
+            if token_symbol in ignore_list: continue
             current_supply_in_token = current_supply_borrow['currentSupply'][token_symbol]
             oracle_price_for_token = float(oracle_file[token_symbol]["oracle"])
             prod_supply_in_token = prod_supply_borrow['supply'][token_symbol] / oracle_price_for_token
@@ -528,6 +531,7 @@ def compare_to_prod_and_send_alerts(old_alerts, data_time, name, base_SITE_ID, c
 
         # compare borrow
         for token_symbol in current_supply_borrow['currentBorrow']:
+            if token_symbol in ignore_list: continue
             current_borrow_in_token = current_supply_borrow['currentBorrow'][token_symbol]
             oracle_price_for_token = float(oracle_file[token_symbol]["oracle"])
             prod_borrow_in_token = prod_supply_borrow['borrow'][token_symbol] / oracle_price_for_token
