@@ -222,136 +222,127 @@ if __name__ == '__main__':
     send_alerts = len(sys.argv) > 3
     print("SEND ALERTS", send_alerts)
 
-    try:
-        while True:
-            startDate = round(datetime.datetime.now().timestamp())
-            if alert_mode:
-                # if in alert mode, record monitoring data
-                utils.record_monitoring_data({
-                    "name": 'Agave',
-                    "status": "running",
-                    "lastStart": startDate,
-                    'runEvery': 30 * 60
-                })
+    while True:
+        startDate = round(datetime.datetime.now().timestamp())
+        if alert_mode:
+            # if in alert mode, record monitoring data
+            utils.record_monitoring_data({
+                "name": 'Agave',
+                "status": "running",
+                "lastStart": startDate,
+                'runEvery': 30 * 60
+            })
 
-            if os.path.sep in SITE_ID:
-                SITE_ID = SITE_ID.split(os.path.sep)[0]
-            SITE_ID = utils.get_site_id(SITE_ID)
-            #SITE_ID = "4\\2023-3-21-8-40"
-            file = open(lending_platform_json_file)
-            data = json.load(file)
+        if os.path.sep in SITE_ID:
+            SITE_ID = SITE_ID.split(os.path.sep)[0]
+        SITE_ID = utils.get_site_id(SITE_ID)
+        #SITE_ID = "4\\2023-3-21-8-40"
+        file = open(lending_platform_json_file)
+        data = json.load(file)
 
-            if os.path.exists(oracle_json_file):
-                file = open(oracle_json_file)
-                oracle = json.load(file)
-                data["prices"] = copy.deepcopy(oracle["prices"])
-                print("FAST ORACLE")
+        if os.path.exists(oracle_json_file):
+            file = open(oracle_json_file)
+            oracle = json.load(file)
+            data["prices"] = copy.deepcopy(oracle["prices"])
+            print("FAST ORACLE")
 
-            cp_parser = compound_parser.CompoundParser()
-            users_data, assets_liquidation_data, \
-            last_update_time, names, inv_names, decimals, collateral_factors, borrow_caps, collateral_caps, prices, \
-            underlying, inv_underlying, liquidation_incentive, orig_user_data, totalAssetCollateral, totalAssetBorrow = cp_parser.parse(
-                data)
+        cp_parser = compound_parser.CompoundParser()
+        users_data, assets_liquidation_data, \
+        last_update_time, names, inv_names, decimals, collateral_factors, borrow_caps, collateral_caps, prices, \
+        underlying, inv_underlying, liquidation_incentive, orig_user_data, totalAssetCollateral, totalAssetBorrow = cp_parser.parse(
+            data)
 
-            users_data["nl_user_collateral"] = 0
-            users_data["nl_user_debt"] = 0
+        users_data["nl_user_collateral"] = 0
+        users_data["nl_user_debt"] = 0
 
-            for base_to_simulation in assets_to_simulate:
-                users_data["NL_COLLATERAL_" + base_to_simulation] = users_data["NO_CF_COLLATERAL_" + base_to_simulation]
-                users_data["NL_DEBT_" + base_to_simulation] = users_data["DEBT_" + base_to_simulation]
-                users_data["MIN_" + base_to_simulation] = users_data[
-                    ["NO_CF_COLLATERAL_" + base_to_simulation, "DEBT_" + base_to_simulation]].min(axis=1)
+        for base_to_simulation in assets_to_simulate:
+            users_data["NL_COLLATERAL_" + base_to_simulation] = users_data["NO_CF_COLLATERAL_" + base_to_simulation]
+            users_data["NL_DEBT_" + base_to_simulation] = users_data["DEBT_" + base_to_simulation]
+            users_data["MIN_" + base_to_simulation] = users_data[
+                ["NO_CF_COLLATERAL_" + base_to_simulation, "DEBT_" + base_to_simulation]].min(axis=1)
 
-                users_data["NL_COLLATERAL_" + base_to_simulation] -= users_data["MIN_" + base_to_simulation]
-                users_data["NL_DEBT_" + base_to_simulation] -= users_data["MIN_" + base_to_simulation]
-                users_data["nl_user_collateral"] += users_data["NL_COLLATERAL_" + base_to_simulation]
-                users_data["nl_user_debt"] += users_data["NL_DEBT_" + base_to_simulation]
+            users_data["NL_COLLATERAL_" + base_to_simulation] -= users_data["MIN_" + base_to_simulation]
+            users_data["NL_DEBT_" + base_to_simulation] -= users_data["MIN_" + base_to_simulation]
+            users_data["nl_user_collateral"] += users_data["NL_COLLATERAL_" + base_to_simulation]
+            users_data["nl_user_debt"] += users_data["NL_DEBT_" + base_to_simulation]
 
-            kp = kyber_prices.KyberPrices("100", inv_names, underlying, decimals)
+        kp = kyber_prices.KyberPrices("100", inv_names, underlying, decimals)
 
-            base_runner.create_overview(SITE_ID, users_data, totalAssetCollateral, totalAssetBorrow)
-            base_runner.create_lending_platform_current_information(SITE_ID, last_update_time, names, inv_names, decimals,
-                                                                    prices, collateral_factors, collateral_caps,
-                                                                    borrow_caps,
-                                                                    underlying)
-            base_runner.create_account_information(SITE_ID, users_data, totalAssetCollateral, totalAssetBorrow, inv_names,
-                                                assets_liquidation_data)
-            base_runner.create_oracle_information(SITE_ID, prices, chain_id, names, assets_aliases, kp.get_price)
-            create_dex_information()
-            base_runner.create_whale_accounts_information(SITE_ID, users_data, assets_to_simulate)
-            base_runner.create_open_liquidations_information(SITE_ID, users_data, assets_to_simulate)
+        base_runner.create_overview(SITE_ID, users_data, totalAssetCollateral, totalAssetBorrow)
+        base_runner.create_lending_platform_current_information(SITE_ID, last_update_time, names, inv_names, decimals,
+                                                                prices, collateral_factors, collateral_caps,
+                                                                borrow_caps,
+                                                                underlying)
+        base_runner.create_account_information(SITE_ID, users_data, totalAssetCollateral, totalAssetBorrow, inv_names,
+                                            assets_liquidation_data)
+        base_runner.create_oracle_information(SITE_ID, prices, chain_id, names, assets_aliases, kp.get_price)
+        create_dex_information()
+        base_runner.create_whale_accounts_information(SITE_ID, users_data, assets_to_simulate)
+        base_runner.create_open_liquidations_information(SITE_ID, users_data, assets_to_simulate)
+        
+        ignore_list=[]
+        if alert_mode:
+            # build ignore list for each tokens with <= $10 collateral caps
+            for tokenAddr in collateral_caps: 
+                tokenName = names[tokenAddr]
+                tokenCap = collateral_caps[tokenAddr]
+                if tokenCap <= 10:
+                    print('Adding', tokenName, 'to the ignore list because collateralCap:', tokenCap)
+                    ignore_list.append(tokenName)
             
-            ignore_list=[]
-            if alert_mode:
-                # build ignore list for each tokens with <= $10 collateral caps
-                for tokenAddr in collateral_caps: 
-                    tokenName = names[tokenAddr]
-                    tokenCap = collateral_caps[tokenAddr]
-                    if tokenCap <= 10:
-                        print('Adding', tokenName, 'to the ignore list because collateralCap:', tokenCap)
-                        ignore_list.append(tokenName)
-                
-                # for every tokens in the ignore list, delete entry in inv_names before calling 'create_usd_volumes_for_slippage'
-                # it will remove them from the data fetch and will greatly speed up the alert process
-                # the slippage data for these tokens will not be needed anyway as we will ignore them
-                # this is only done when in alert mode
-                for name in ignore_list:
-                    del inv_names[name]
-                
-                print('new value for inv_names', inv_names)
+            # for every tokens in the ignore list, delete entry in inv_names before calling 'create_usd_volumes_for_slippage'
+            # it will remove them from the data fetch and will greatly speed up the alert process
+            # the slippage data for these tokens will not be needed anyway as we will ignore them
+            # this is only done when in alert mode
+            for name in ignore_list:
+                del inv_names[name]
+            
+            print('new value for inv_names', inv_names)
 
-            base_runner.create_usd_volumes_for_slippage(SITE_ID, chain_id, inv_names, liquidation_incentive, kp.get_price, 
-                                                        False)
-            fix_usd_volume_for_slippage()
-            if alert_mode:
-                d1 = utils.get_file_time(oracle_json_file)
-                d1 = min(last_update_time, d1)
+        base_runner.create_usd_volumes_for_slippage(SITE_ID, chain_id, inv_names, liquidation_incentive, kp.get_price, 
+                                                    False)
+        fix_usd_volume_for_slippage()
+        if alert_mode:
+            d1 = utils.get_file_time(oracle_json_file)
+            d1 = min(last_update_time, d1)
 
-                current_supply_borrow = get_supply_borrow()
-                alert_params = get_alert_params()
-                print('alert_params', alert_params)
-                old_alerts = utils.compare_to_prod_and_send_alerts(old_alerts, d1, "agave", "4", SITE_ID, alert_params, send_alerts, ignore_list= ignore_list, current_supply_borrow= current_supply_borrow)
-                print('old_alerts', old_alerts)
-                endDate =  round(datetime.datetime.now().timestamp())
-                utils.record_monitoring_data({
-                    "name": 'Agave',
-                    "status": "success",
-                    "lastEnd": endDate,
-                    "lastDuration": endDate - startDate,
-                })
-                print("Alert Mode.Sleeping For 30 Minutes")
-                time.sleep(30 * 60)
-            else:
-                base_runner.create_assets_std_ratio_information(SITE_ID,
-                                                                ['DAI', 'USDC', 'LINK', 'GNO', 'BTC', 'ETH', 'FOX', 'EUR', 'wstETH'],
-                                                                [("04", "2022"), ("05", "2022"), ("06", "2022")])
-                create_simulation_config(SITE_ID, c, ETH_PRICE, assets_to_simulate, assets_aliases, liquidation_incentive,
-                                        inv_names)
-                base_runner.create_simulation_results(SITE_ID, ETH_PRICE, total_jobs, collateral_factors, inv_names,
-                                                    print_time_series, fast_mode)
-                base_runner.create_risk_params(SITE_ID, ETH_PRICE, total_jobs, l_factors, print_time_series)
-                base_runner.create_current_simulation_risk(SITE_ID, ETH_PRICE, users_data, assets_to_simulate,
-                                                        assets_aliases,
-                                                        collateral_factors, inv_names, liquidation_incentive, total_jobs,
-                                                        False)
+            current_supply_borrow = get_supply_borrow()
+            alert_params = get_alert_params()
+            print('alert_params', alert_params)
+            old_alerts = utils.compare_to_prod_and_send_alerts(old_alerts, d1, "agave", "4", SITE_ID, alert_params, send_alerts, ignore_list= ignore_list, current_supply_borrow= current_supply_borrow)
+            print('old_alerts', old_alerts)
+            endDate =  round(datetime.datetime.now().timestamp())
+            utils.record_monitoring_data({
+                "name": 'Agave',
+                "status": "success",
+                "lastEnd": endDate,
+                "lastDuration": endDate - startDate,
+            })
+            print("Alert Mode.Sleeping For 30 Minutes")
+            time.sleep(30 * 60)
+        else:
+            base_runner.create_assets_std_ratio_information(SITE_ID,
+                                                            ['DAI', 'USDC', 'LINK', 'GNO', 'BTC', 'ETH', 'FOX', 'EUR', 'wstETH'],
+                                                            [("04", "2022"), ("05", "2022"), ("06", "2022")])
+            create_simulation_config(SITE_ID, c, ETH_PRICE, assets_to_simulate, assets_aliases, liquidation_incentive,
+                                    inv_names)
+            base_runner.create_simulation_results(SITE_ID, ETH_PRICE, total_jobs, collateral_factors, inv_names,
+                                                print_time_series, fast_mode)
+            base_runner.create_risk_params(SITE_ID, ETH_PRICE, total_jobs, l_factors, print_time_series)
+            base_runner.create_current_simulation_risk(SITE_ID, ETH_PRICE, users_data, assets_to_simulate,
+                                                    assets_aliases,
+                                                    collateral_factors, inv_names, liquidation_incentive, total_jobs,
+                                                    False)
 
-                n = datetime.datetime.now().timestamp()
-                d1 = utils.get_file_time(oracle_json_file)
-                d0 = min(last_update_time, d1)
-                utils.update_time_stamps(SITE_ID, d0)
-                utils.publish_results(SITE_ID)
-                utils.compare_to_prod_and_send_alerts(old_alerts, d1, "agave", "4", SITE_ID, "", 10, False)
-                if d1 < float('inf'):
-                    print("oracle_json_file", round((n - d1) / 60), "Minutes")
-                if last_update_time < float('inf'):
-                    print("last_update_time", round((n - last_update_time) / 60), "Minutes")
-                print("Simulation Ended")
-                exit()
-    except Exception as error:
-        err_msg = 'An exception occurred: {}'.format(error)
-        print(err_msg)
-        utils.record_monitoring_data({
-                    "name": 'Agave',
-                    "status": "error",
-                    "error": err_msg
-        })
+            n = datetime.datetime.now().timestamp()
+            d1 = utils.get_file_time(oracle_json_file)
+            d0 = min(last_update_time, d1)
+            utils.update_time_stamps(SITE_ID, d0)
+            utils.publish_results(SITE_ID)
+            utils.compare_to_prod_and_send_alerts(old_alerts, d1, "agave", "4", SITE_ID, "", 10, False)
+            if d1 < float('inf'):
+                print("oracle_json_file", round((n - d1) / 60), "Minutes")
+            if last_update_time < float('inf'):
+                print("last_update_time", round((n - last_update_time) / 60), "Minutes")
+            print("Simulation Ended")
+            exit()
