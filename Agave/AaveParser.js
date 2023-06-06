@@ -129,10 +129,8 @@ class Aave {
         const currentSupply = {};
         const currentBorrow = {};
         const lendingPoolAddress = await this.lendingPoolAddressesProvider.methods.getLendingPool().call();
-        const oracleAddress = await this.lendingPoolAddressesProvider.methods.getPriceOracle().call()
         const lendingPool = new this.web3.eth.Contract(Addresses.lendingPoolAbi, lendingPoolAddress)
         const protocolDataProvider = new this.web3.eth.Contract(Addresses.protocolDataProviderAbi, Addresses.protocolDataProviderAddress)
-        const oracleContract = new this.web3.eth.Contract(Addresses.aaveOracleAbi, oracleAddress)
         
         const allMarkets = await this.aaveUserInfo.methods.getReservesList(lendingPool.options.address).call()
 
@@ -152,16 +150,13 @@ class Aave {
             }
 
             const reserveData = await protocolDataProvider.methods.getReserveData(market).call();
-            console.log("calling market price", {market}, {cachedToken})
-            const price = await oracleContract.methods.getAssetPrice(market).call()
-            const priceNorm = normalize(price, 18)
             const liquidity = reserveData.availableLiquidity;
             const liquidityNorm = normalize(liquidity, cachedToken.decimals);
             const debt = reserveData.totalVariableDebt;
             const debtNorm = normalize(debt, cachedToken.decimals);
 
-            currentSupply[cachedToken.symbol] = liquidityNorm * priceNorm;
-            currentBorrow[cachedToken.symbol] = debtNorm * priceNorm;
+            currentSupply[cachedToken.symbol] = liquidityNorm;
+            currentBorrow[cachedToken.symbol] = debtNorm;
         }
 
         return {currentSupply, currentBorrow};
