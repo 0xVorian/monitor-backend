@@ -564,16 +564,16 @@ def compare_to_prod_and_send_alerts(old_alerts, data_time, name, base_SITE_ID, c
                                     old_alerts[message_key] = 0
                                 old_alerts[message_key] = pct_diff
 
-    if not alert_sent:
-        for alert_param in alert_params:
-            if alert_param['is_default']:
-                message = f"{name}" \
-                        f"\n{time_alert}" \
-                        f"\Supply/Borrow are fine."
-                print(message)
-                if send_alerts:
-                    print("Sending To TG")
-                    send_telegram_alert(alert_param['tg_bot_id'], alert_param['tg_channel_id'], message)
+        if not alert_sent:
+            for alert_param in alert_params:
+                if alert_param['is_default']:
+                    message = f"{name}" \
+                            f"\n{time_alert}" \
+                            f"\nSupply/Borrow are fine."
+                    print(message)
+                    if send_alerts:
+                        print("Sending To TG")
+                        send_telegram_alert(alert_param['tg_bot_id'], alert_param['tg_channel_id'], message)
 
     return old_alerts
 
