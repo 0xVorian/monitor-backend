@@ -491,9 +491,9 @@ def compare_to_prod_and_send_alerts(old_alerts, data_time, name, base_SITE_ID, c
         for token_symbol in current_supply_borrow['currentSupply']:
             current_supply_usd = current_supply_borrow['currentSupply'][token_symbol]
             prod_supply_usd = prod_supply_borrow['supply'][token_symbol]
-            if prod_supply_usd == 0:
+            if current_supply_usd == 0:
                 continue # avoid division per 0
-            pct_diff = (prod_supply_usd - current_supply_usd) / prod_supply_usd
+            pct_diff = (current_supply_usd - prod_supply_usd) / current_supply_usd
             print(token_symbol, 'current supply:', current_supply_usd, 'prod supply:', prod_supply_usd)
             print(token_symbol, 'diff:', pct_diff)
             
@@ -505,7 +505,7 @@ def compare_to_prod_and_send_alerts(old_alerts, data_time, name, base_SITE_ID, c
                     message = f"{name}" \
                             f"\n{time_alert}" \
                             f"\n{token_symbol}" \
-                            f"\Last simulation supply: ${prod_supply_usd}" \
+                            f"\nLast simulation supply: ${prod_supply_usd}" \
                             f"\nCurrent supply: ${current_supply_usd}" \
                             f"\ndiff: {round(pct_diff*100.0, 2)}%"
                         
@@ -529,9 +529,9 @@ def compare_to_prod_and_send_alerts(old_alerts, data_time, name, base_SITE_ID, c
         for token_symbol in current_supply_borrow['currentBorrow']:
             current_borrow_usd = current_supply_borrow['currentBorrow'][token_symbol]
             prod_borrow_usd = prod_supply_borrow['borrow'][token_symbol]
-            if prod_borrow_usd == 0:
+            if current_borrow_usd == 0:
                 continue # avoid division per 0
-            pct_diff = (prod_borrow_usd - current_borrow_usd) / prod_borrow_usd
+            pct_diff = (current_borrow_usd - prod_borrow_usd) / current_borrow_usd
             print(token_symbol, 'current borrow:', current_borrow_usd, 'prod borrow:', prod_borrow_usd)
             print(token_symbol, 'diff:', pct_diff)
             
@@ -543,7 +543,7 @@ def compare_to_prod_and_send_alerts(old_alerts, data_time, name, base_SITE_ID, c
                     message = f"{name}" \
                             f"\n{time_alert}" \
                             f"\n{token_symbol}" \
-                            f"\Last simulation borrow: ${prod_borrow_usd}" \
+                            f"\nLast simulation borrow: ${prod_borrow_usd}" \
                             f"\nCurrent borrow: ${current_borrow_usd}" \
                             f"\ndiff: {round(pct_diff*100.0, 2)}%"
                         
