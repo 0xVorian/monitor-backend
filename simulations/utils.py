@@ -495,14 +495,14 @@ def compare_to_prod_and_send_alerts(old_alerts, data_time, name, base_SITE_ID, c
             current_supply_in_token = current_supply_borrow['currentSupply'][token_symbol]
             oracle_price_for_token = float(oracle_file[token_symbol]["oracle"])
             prod_supply_in_token = prod_supply_borrow['supply'][token_symbol] / oracle_price_for_token
-            if current_supply_in_token == 0:
+            if prod_supply_in_token == 0:
                 continue # avoid division per 0
             
             diff_in_usd = abs(prod_supply_in_token - current_supply_in_token) * oracle_price_for_token
             if diff_in_usd < 100000:
                 continue # do not send alert if diff is less than $100k
 
-            pct_diff = (current_supply_in_token - prod_supply_in_token) / current_supply_in_token
+            pct_diff = (current_supply_in_token - prod_supply_in_token) / prod_supply_in_token
             print(token_symbol, 'current supply:', current_supply_in_token, 'prod supply:', prod_supply_in_token)
             print(token_symbol, 'diff:', pct_diff)
             
@@ -540,14 +540,14 @@ def compare_to_prod_and_send_alerts(old_alerts, data_time, name, base_SITE_ID, c
             current_borrow_in_token = current_supply_borrow['currentBorrow'][token_symbol]
             oracle_price_for_token = float(oracle_file[token_symbol]["oracle"])
             prod_borrow_in_token = prod_supply_borrow['borrow'][token_symbol] / oracle_price_for_token
-            if current_borrow_in_token == 0:
+            if prod_borrow_in_token == 0:
                 continue # avoid division per 0
             
             diff_in_usd = abs(prod_borrow_in_token - current_borrow_in_token) * oracle_price_for_token
             if diff_in_usd < 100000:
                 continue # do not send alert if diff is less than $100k
-            
-            pct_diff = (current_borrow_in_token - prod_borrow_in_token) / current_borrow_in_token
+
+            pct_diff = (current_borrow_in_token - prod_borrow_in_token) / prod_borrow_in_token
             print(token_symbol, 'current borrow:', current_borrow_in_token, 'prod borrow:', prod_borrow_in_token)
             print(token_symbol, 'diff:', pct_diff)
             
