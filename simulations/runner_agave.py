@@ -137,6 +137,11 @@ def fix_usd_volume_for_slippage():
     json.dump(current_data, fp)
     fp.close()
 
+def get_supply_borrow():
+    supply_borrow_file = open(supply_borrow_json_file)
+    supply_borrow = json.load(supply_borrow_file)
+    supply_borrow_file.close()
+    return supply_borrow
 
 def get_alert_params():
     alert_params = []
@@ -149,6 +154,7 @@ def get_alert_params():
         "oracle_threshold": 3, # oracle threshold is always in absolute
         "slippage_threshold": 10, # liquidity threshold before sending alert
         "only_negative": False, # only send liquidity alert if the new volume < old volume
+        "supply_borrow_threshold": 10, # supply/borrow threshold before sending alert
     })
 
     # REAL AGAVE ALERT CHANNEL: send only oracle > 3% and liquidity alerts where <-50%
@@ -159,6 +165,7 @@ def get_alert_params():
         "oracle_threshold": 3, # oracle threshold is always in absolute
         "slippage_threshold": 50, # liquidity threshold before sending alert
         "only_negative": True, # only send liquidity alert if the new volume < old volume
+        "supply_borrow_threshold": 10, # supply/borrow threshold before sending alert
     })
     
     # PRIVATE AGAVE CHANNEL: alerts when liquidity <-10%
@@ -169,6 +176,7 @@ def get_alert_params():
         "oracle_threshold": 3, # oracle threshold is always in absolute
         "slippage_threshold": 10, # liquidity threshold before sending alert
         "only_negative": True, # only send liquidity alert if the new volume < old volume
+        "supply_borrow_threshold": 10, # supply/borrow threshold before sending alert
     })
 
     return alert_params
@@ -176,6 +184,7 @@ def get_alert_params():
 lending_platform_json_file = ".." + os.path.sep + "Agave" + os.path.sep + "data.json"
 oracle_json_file = ".." + os.path.sep + "Agave" + os.path.sep + "oracle.json"
 balancer_volume_json_file = ".." + os.path.sep + "Agave" + os.path.sep + "balancer_volume_for_slippage.json"
+supply_borrow_json_file = ".." + os.path.sep + "Agave" + os.path.sep + "agave_supply_borrow.json"
 
 assets_to_simulate = ['USDC', 'WXDAI', 'LINK', 'GNO', 'WBTC', 'WETH', 'FOX', "USDT", "EURe", "wstETH"]
 assets_aliases = {'USDC': 'USDC', 'WXDAI': 'DAI', 'LINK': 'LINK', 'GNO': 'GNO', 'WBTC': 'BTC', 'WETH': 'ETH',
@@ -212,7 +221,18 @@ if __name__ == '__main__':
     print("ALERT MODE", alert_mode)
     send_alerts = len(sys.argv) > 3
     print("SEND ALERTS", send_alerts)
+
     while True:
+        startDate = round(datetime.datetime.now().timestamp())
+        if alert_mode:
+            # if in alert mode, record monitoring data
+            utils.record_monitoring_data({
+                "name": 'Agave',
+                "status": "running",
+                "lastStart": startDate,
+                'runEvery': 30 * 60
+            })
+
         if os.path.sep in SITE_ID:
             SITE_ID = SITE_ID.split(os.path.sep)[0]
         SITE_ID = utils.get_site_id(SITE_ID)
@@ -254,7 +274,7 @@ if __name__ == '__main__':
                                                                 borrow_caps,
                                                                 underlying)
         base_runner.create_account_information(SITE_ID, users_data, totalAssetCollateral, totalAssetBorrow, inv_names,
-                                               assets_liquidation_data)
+                                            assets_liquidation_data)
         base_runner.create_oracle_information(SITE_ID, prices, chain_id, names, assets_aliases, kp.get_price)
         create_dex_information()
         base_runner.create_whale_accounts_information(SITE_ID, users_data, assets_to_simulate)
@@ -286,10 +306,18 @@ if __name__ == '__main__':
             d1 = utils.get_file_time(oracle_json_file)
             d1 = min(last_update_time, d1)
 
+            current_supply_borrow = get_supply_borrow()
             alert_params = get_alert_params()
             print('alert_params', alert_params)
-            old_alerts = utils.compare_to_prod_and_send_alerts(old_alerts, d1, "agave", "4", SITE_ID, alert_params, send_alerts, ignore_list= ignore_list)
+            old_alerts = utils.compare_to_prod_and_send_alerts(old_alerts, d1, "agave", "4", SITE_ID, alert_params, send_alerts, ignore_list= ignore_list, current_supply_borrow= current_supply_borrow)
             print('old_alerts', old_alerts)
+            endDate =  round(datetime.datetime.now().timestamp())
+            utils.record_monitoring_data({
+                "name": 'Agave',
+                "status": "success",
+                "lastEnd": endDate,
+                "lastDuration": endDate - startDate,
+            })
             print("Alert Mode.Sleeping For 30 Minutes")
             time.sleep(30 * 60)
         else:
@@ -297,14 +325,14 @@ if __name__ == '__main__':
                                                             ['DAI', 'USDC', 'LINK', 'GNO', 'BTC', 'ETH', 'FOX', 'EUR', 'wstETH'],
                                                             [("04", "2022"), ("05", "2022"), ("06", "2022")])
             create_simulation_config(SITE_ID, c, ETH_PRICE, assets_to_simulate, assets_aliases, liquidation_incentive,
-                                     inv_names)
+                                    inv_names)
             base_runner.create_simulation_results(SITE_ID, ETH_PRICE, total_jobs, collateral_factors, inv_names,
-                                                  print_time_series, fast_mode)
+                                                print_time_series, fast_mode)
             base_runner.create_risk_params(SITE_ID, ETH_PRICE, total_jobs, l_factors, print_time_series)
             base_runner.create_current_simulation_risk(SITE_ID, ETH_PRICE, users_data, assets_to_simulate,
-                                                       assets_aliases,
-                                                       collateral_factors, inv_names, liquidation_incentive, total_jobs,
-                                                       False)
+                                                    assets_aliases,
+                                                    collateral_factors, inv_names, liquidation_incentive, total_jobs,
+                                                    False)
 
             n = datetime.datetime.now().timestamp()
             d1 = utils.get_file_time(oracle_json_file)

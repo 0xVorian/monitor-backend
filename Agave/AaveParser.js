@@ -2,6 +2,9 @@ const Web3 = require('web3')
 const fs = require('fs');
 const { toBN, toWei, fromWei } = Web3.utils
 const Addresses = require("./Addresses.js");
+const {normalize} = require('../utils/TokenHelper.js')
+
+const BN_1e18 = toBN(10).pow(toBN(18));
 
 const sleep = async seconds => {
     return new Promise(resolve => setTimeout(resolve, seconds * 1000))
@@ -71,7 +74,7 @@ class Aave {
       this.collateralCaps = {}
 
       this.totalCollateral = {}
-      this.totalBorrows = {}      
+      this.totalBorrows = {}   
     }
 
     getData() {
@@ -116,6 +119,47 @@ class Aave {
         //console.log({output})
 
         return output
+    }
+
+    // this simple cache store token symbol to avoid calling the RPC to get the symbol each time
+    // we call the getSupplyBorrow() function
+    tokenCache = {};
+
+    async getSupplyBorrow() {
+        const currentSupply = {};
+        const currentBorrow = {};
+        const lendingPoolAddress = await this.lendingPoolAddressesProvider.methods.getLendingPool().call();
+        const lendingPool = new this.web3.eth.Contract(Addresses.lendingPoolAbi, lendingPoolAddress)
+        const protocolDataProvider = new this.web3.eth.Contract(Addresses.protocolDataProviderAbi, Addresses.protocolDataProviderAddress)
+        
+        const allMarkets = await this.aaveUserInfo.methods.getReservesList(lendingPool.options.address).call()
+
+        for(const market of allMarkets) {
+            let cachedToken = this.tokenCache[market];
+            if(!cachedToken) {
+                const tokenContract = new this.web3.eth.Contract(Addresses.erc20Abi, market)
+                const marketSymbol = await tokenContract.methods.symbol().call()
+                const marketDecimals = await tokenContract.methods.decimals().call()
+                console.log(`adding symbol ${marketSymbol} with address ${market} and ${marketDecimals} decimals to cache`);
+                this.tokenCache[market] = {
+                    symbol: marketSymbol,
+                    decimals: Number(marketDecimals)
+                }
+
+                cachedToken = this.tokenCache[market];
+            }
+
+            const reserveData = await protocolDataProvider.methods.getReserveData(market).call();
+            const liquidity = reserveData.availableLiquidity;
+            const liquidityNorm = normalize(liquidity, cachedToken.decimals);
+            const debt = reserveData.totalVariableDebt;
+            const debtNorm = normalize(debt, cachedToken.decimals);
+
+            currentSupply[cachedToken.symbol] = liquidityNorm;
+            currentBorrow[cachedToken.symbol] = debtNorm;
+        }
+
+        return {currentSupply, currentBorrow};
     }
 
     async initPrices() {
