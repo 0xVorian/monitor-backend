@@ -6,7 +6,7 @@ import copy
 import utils
 import unibox
 import traceback
-
+import brownian_motion
 
 def usd_liquidation_size_with_flare(safe_ratio, curr_price, usd_collateral, btc_debt, liquidation_bonus,
                                     usd_liquidation_ratio, flare_collateral, flare_price, flare_safe_ratio):
@@ -81,17 +81,21 @@ def crete_price_trajectory(eth_usd_data, binance_btc_for_flare_data, btc_usd_std
     dai_eth_array = convert_to_array(data1)
     return dai_eth_array
 
+def get_liquidation_incentive(liquidation_incentive, start_liquidation_time, current_time, liquidation_incentive_time_factor):
+    time_diff_in_s_hours_units = int((current_time -  start_liquidation_time) / (1000 * 1000 * 60 * 60 * 3))
+    time_diff_in_s_hours_units = min(time_diff_in_s_hours_units, 6) # max 6 units
+    return liquidation_incentive + time_diff_in_s_hours_units * liquidation_incentive_time_factor
 def create_liquidation_df(collateral_volume, debt_volume, min_cr):
     return pd.DataFrame()
 
-def run_single_simulation(date_file_name,
-                          binance_btc_for_flare_file_name,
+def run_single_simulation(eth_usdt_data, flare_btc_data,
                           btc_usd_std, flr_btc_std,
                           debt_volume, min_usd_cr, safe_usd_cr,
                           usd_collateral_ratio,
                           usd_dl_x, flr_dl_x,
                           usd_dl_recovery, flr_dl_recovery,
-                          min_flare_cr, safe_flare_cr):
+                          min_flare_cr, safe_flare_cr,
+                          liquidation_incentive_time_factor):
 
     initial_safe_flare_cr = safe_flare_cr
     initial_safe_usd_cr = safe_usd_cr
@@ -108,7 +112,6 @@ def run_single_simulation(date_file_name,
 
     uni_box = unibox.unibox(flr_dl_x, usd_dl_x)
 
-    liquidation_incentive = 0.1
     initial_debt_volume_for_simulation = debt_volume
     initial_flr_collateral_volume_for_simulation = flr_collateral_volume
     initial_usd_collateral_volume_for_simulation = usd_collateral_volume
@@ -119,9 +122,8 @@ def run_single_simulation(date_file_name,
         flr_liquidation_table = []
         usd_liquidation_table = []
         time_series_report = []
-        eth_usd_data = pd.read_csv(date_file_name)
-        binance_btc_for_flare_data = pd.read_csv(binance_btc_for_flare_file_name)
-        file = crete_price_trajectory(eth_usd_data, binance_btc_for_flare_data, btc_usd_std, flr_btc_std)
+
+        file = crete_price_trajectory(eth_usdt_data, flare_btc_data, btc_usd_std, flr_btc_std)
         state = 0
         debt_volume /= file[0]["btc_usd_price"]
         flr_collateral_volume /= file[0]["flare_usd_price"]
@@ -129,7 +131,9 @@ def run_single_simulation(date_file_name,
         total_liquidations = 0
         total_flare_liquidation = 0
         total_usd_liquidation = 0
+        start_liquidation_time = 0
         for row in file:
+            current_time = row["timestamp_x"]
             row_btc_usd_price = row["btc_usd_price"]
             row_flare_btc_price = row["flare_btc_price"]
             row_flare_usd_price = row["flare_usd_price"]
@@ -153,19 +157,27 @@ def run_single_simulation(date_file_name,
             min_flr_ucr = min(min_flr_ucr, flr_ucr)
             open_liquidation = 0
 
+            li = 0
             if (usd_ucr <= min_usd_cr
                     or flr_ucr <= min_flare_cr
                     or (state == 1 and (usd_ucr <= safe_usd_cr or flr_ucr <= safe_flare_cr))):
+                if start_liquidation_time == 0:
+                    start_liquidation_time = current_time
                 state = 1
+
+                li = get_liquidation_incentive(liquidation_incentive, start_liquidation_time, current_time, liquidation_incentive_time_factor)
+                if li + 1 >= safe_usd_cr:
+                    li = safe_usd_cr - 1.01
+
                 l_size = usd_liquidation_size_with_flare(safe_usd_cr, row_btc_usd_price, usd_collateral_volume,
                                                          debt_volume,
-                                                         liquidation_incentive,
+                                                         li,
                                                          usd_collateral_ratio, flr_collateral_volume,
                                                          row_flare_usd_price, safe_flare_cr)
 
                 # print(safe_usd_cr, row_btc_usd_price, usd_collateral_volume,
                 #                                          debt_volume,
-                #                                          liquidation_incentive,
+                #                                          li,,
                 #                                          usd_collateral_ratio, flr_collateral_volume,
                 #                                          row_flare_usd_price, safe_flare_cr)
                 # print(uni_box.get_usd_xy())
@@ -206,6 +218,7 @@ def run_single_simulation(date_file_name,
                 flr_liquidation_table.append(0)
                 usd_liquidation_table.append(0)
                 state = 0
+                start_liquidation_time = 0
 
             uni_usd = uni_box.get_usd_xy()
             uni_flare = uni_box.get_flare_xy()
@@ -224,6 +237,7 @@ def run_single_simulation(date_file_name,
                           "total_usd_liquidation": total_usd_liquidation,
                           "total_liquidations": total_liquidations,
                           "open_liquidation": open_liquidation,
+                          "li":li,
                           "usd_ucr": usd_ucr,
                           "flare_ucr": flr_ucr,
                           "min_flare_ucr": min_flr_ucr,
@@ -231,11 +245,12 @@ def run_single_simulation(date_file_name,
 
             time_series_report.append(report_row)
 
-        time_series_report_name = f"webserver\\flare\\" + SITE_ID + "\\" \
+        time_series_report_name = f"webserver\\" + SITE_ID + "\\" \
                                                                     f"BtcStd-{btc_usd_std}+" \
                                                                     f"FlrStd-{flr_btc_std}+" \
                                                                     f"MinUsdCr-{min_usd_cr}+" \
                                                                     f"SafeUsdCr-{initial_safe_usd_cr}+" \
+                                                                    f"LiTimeFactor-{liquidation_incentive_time_factor}+"\
                                                                     f"MinFlrCr-{min_flare_cr}+" \
                                                                     f"SafeFlrCr-{initial_safe_flare_cr}+" \
                                                                     f"UsdCr-{usd_collateral_ratio}+" \
@@ -245,14 +260,15 @@ def run_single_simulation(date_file_name,
                                                                     f"FlrRec-{flr_dl_recovery}"
 
         report_df = pd.DataFrame(time_series_report)
-        #report_df.to_csv(time_series_report_name + ".csv")
+        report_df.to_csv(time_series_report_name + ".csv")
         plt.cla()
         plt.close()
         fig, ax1 = plt.subplots()
         fig.set_size_inches(12.5, 8.5)
         ax2 = ax1.twinx()
         title = "Min USD CR: " + str(round(min_usd_ucr, 2)) + " Min Flare CR: " + str(round(min_flr_ucr, 2))
-        suptitle = "Score: " + str(round(report_df["open_liquidation"].sum() / len(report_df), 2))
+        running_score = (report_df["open_liquidation"] / report_df[["usd_ucr","flare_ucr"]].min(axis=1)).mean()
+        suptitle = "Score: " + str(round(running_score, 2))
         plt.suptitle(suptitle)
         plt.title(title)
 
@@ -304,6 +320,7 @@ def run_single_simulation(date_file_name,
                 "debt_volume": initial_debt_volume_for_simulation,
                 "usd_collateral_volume": initial_usd_collateral_volume_for_simulation,
                 "flare_collateral_volume": initial_flr_collateral_volume_for_simulation,
+                "liquidation_incentive_time_factor":liquidation_incentive_time_factor,
                 "usd_dl_x": initial_usd_dl_x,
                 "usd_dl_recovery": usd_dl_recovery,
                 "flare_dl_x": initial_flr_dl_x,
@@ -315,7 +332,7 @@ def run_single_simulation(date_file_name,
                 "usd_collateral_ratio": usd_collateral_ratio,
                 "min_usd_ucr": min_usd_ucr,
                 "min_flare_ucr": min_flr_ucr,
-                "total_score": report_df["open_liquidation"].sum() / len(report_df)}
+                "running_score": running_score}
 
 
 def run_simulation(c, simulation_file_name, binance_btc_for_flare_file_name):
@@ -325,15 +342,14 @@ def run_simulation(c, simulation_file_name, binance_btc_for_flare_file_name):
                                c["usd_collateral_ratio"],
                                c["usd_dl_x"], c["flare_dl_x"],
                                c["usd_dl_recovery"], c["flare_dl_recovery"],
-                               c["min_flare_cr"], c["safe_flare_cr"])
+                               c["min_flare_cr"], c["safe_flare_cr"], c["liquidation_incentive_time_factor"])
     myprod2 = copy.deepcopy(all)
     all_runs = len(list(myprod2))
     print("Total Runs", all_runs)
     indx = 0
     for r in all:
-        #print(r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8], r[9], r[10], r[11])
         report = run_single_simulation(simulation_file_name, binance_btc_for_flare_file_name, r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7],
-                                       r[8], r[9], r[10], r[11])
+                                       r[8], r[9], r[10], r[11], r[12])
         summary_report.append(report)
         indx += 1
         print(indx / all_runs)
@@ -345,7 +361,7 @@ initial_dept_volume = 100_000_000
 
 c = {
     "btc_usd_std": [1],
-    "flare_btc_std": [0.5],
+    "flare_btc_std": [1],
     "debt_volume": [initial_dept_volume],
     "usd_dl_x": [0.1, 0.2, 0.3],
     "usd_dl_recovery": [30, 60, 90],
@@ -355,12 +371,33 @@ c = {
     "safe_usd_cr": [0.2, 0.3, 0.4],
     "min_flare_cr": [1.5, 1.7, 2.0],
     "safe_flare_cr": [0.1, 0.5, 1.0],
-    "usd_collateral_ratio": [1]}
+    "usd_collateral_ratio": [1],
+    "liquidation_incentive_time_factor":[0, 0.05]}
+
+# c = {
+#     "btc_usd_std": [1],
+#     "flare_btc_std": [1],
+#     "debt_volume": [initial_dept_volume],
+#     "usd_dl_x": [0.2],
+#     "usd_dl_recovery": [30],
+#     "flare_dl_x": [0.2],
+#     "flare_dl_recovery": [30],
+#     "min_usd_cr": [1.2],
+#     "safe_usd_cr": [0.2],
+#     "min_flare_cr": [1.5],
+#     "safe_flare_cr": [0.5],
+#     "usd_collateral_ratio": [1],
+#     "liquidation_incentive_time_factor":[0, 0.05]}
 
 
-SITE_ID = "2023-5-30-0-2"
-print(SITE_ID)
+
+liquidation_incentive = 0.1
+SITE_ID = utils.get_site_id("flare")
 binance_btc_for_flare_file_name = "data\\binance_btc_for_flare.csv"
 simulation_file_name = "c:\\dev\\monitor-backend\\simulations\\data_worst_day\\data_unified_2020_03_ETHUSDT.csv"
-run_simulation(c, simulation_file_name, binance_btc_for_flare_file_name)
+btc_usdt_data = pd.read_csv(simulation_file_name)
+flare_btc_data =  pd.read_csv(binance_btc_for_flare_file_name)
+# btc_usdt_data = brownian_motion.generate_brownian_motion(0.04, 100, 60 * 24)
+# flare_btc_data = brownian_motion.generate_brownian_motion(0.08, 100, 60 * 24)
+run_simulation(c, btc_usdt_data, flare_btc_data)
 # utils.publish_results("flare\\" + SITE_ID, None, True)
