@@ -97,6 +97,9 @@ def run_single_simulation(eth_usdt_data, flare_btc_data,
                           min_flare_cr, safe_flare_cr,
                           liquidation_incentive_time_factor):
 
+    eth_usdt_data = copy.deepcopy(eth_usdt_data)
+    flare_btc_data = copy.deepcopy(flare_btc_data)
+
     initial_safe_flare_cr = safe_flare_cr
     initial_safe_usd_cr = safe_usd_cr
     initial_usd_dl_x =  usd_dl_x
@@ -361,7 +364,7 @@ initial_dept_volume = 100_000_000
 
 c = {
     "btc_usd_std": [1],
-    "flare_btc_std": [1],
+    "flare_btc_std": [0.5],
     "debt_volume": [initial_dept_volume],
     "usd_dl_x": [0.1, 0.2, 0.3],
     "usd_dl_recovery": [30, 60, 90],
