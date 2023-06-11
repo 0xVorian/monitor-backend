@@ -142,6 +142,7 @@ class flare_simulation():
             total_flare_liquidation = 0
             total_usd_liquidation = 0
             start_liquidation_time = 0
+            return
             for row in file:
                 current_time = row["timestamp_x"]
                 row_btc_usd_price = row["btc_usd_price"]
@@ -321,7 +322,7 @@ class flare_simulation():
         except Exception as e:
             min_usd_ucr = -100
             min_flare_ucr = -100
-            #print(traceback.format_exc())
+            print(traceback.format_exc())
             print("Exception!!!!!")
             exit()
 
