@@ -1,4 +1,5 @@
 import itertools
+import os
 import traceback
 import matplotlib.pyplot as plt
 from joblib import Parallel, delayed
@@ -254,7 +255,7 @@ class flare_simulation():
 
                 time_series_report.append(report_row)
 
-            time_series_report_name = f"webserver\\" + SITE_ID + "\\" \
+            time_series_report_name = f"webserver" + os.path.sep + SITE_ID + os.path.sep + \
                                                                         f"BtcStd-{btc_usd_std}+" \
                                                                         f"FlrStd-{flr_btc_std}+" \
                                                                         f"MinUsdCr-{min_usd_cr}+" \
@@ -422,9 +423,9 @@ class flare_simulation():
 
 if __name__ == '__main__':
     #flare_simulation().run_regular_simulation()
-    total_runs = 10
+    total_runs = 100
     try:
-        Parallel(n_jobs=1)(
+        Parallel(n_jobs=10)(
             delayed(flare_simulation().run_random_simulation)() for j in range(total_runs))
     except Exception as e:
         print("Exception !!!!!!!!!!!!!!!", str(e))
