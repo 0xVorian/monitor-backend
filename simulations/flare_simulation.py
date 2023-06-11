@@ -367,7 +367,6 @@ class flare_simulation():
         pd.DataFrame(summary_report).to_csv("summary.csv")
 
     def run_random_simulation(self):
-        return
         c = {
             "btc_usd_std": [1],
             "flare_btc_std": [0.5],
@@ -395,7 +394,7 @@ class flare_simulation():
         flare_btc_data["ask_price"] = flare_btc_data["adjust_price"]
         flare_btc_data["bid_price"] = flare_btc_data["adjust_price"]
 
-        self.run_simulation(c, btc_usdt_data, flare_btc_data, SITE_ID)
+        # self.run_simulation(c, btc_usdt_data, flare_btc_data, SITE_ID)
 
     def run_regular_simulation(self):
         c = {
