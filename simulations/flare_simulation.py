@@ -127,8 +127,9 @@ class flare_simulation():
         initial_usd_collateral_volume_for_simulation = usd_collateral_volume
         min_usd_ucr = float('inf')
         min_flr_ucr = float('inf')
-        return 
+
         try:
+            return
             flr_liquidation_table = []
             usd_liquidation_table = []
             time_series_report = []
