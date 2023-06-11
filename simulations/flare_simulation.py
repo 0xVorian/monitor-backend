@@ -127,7 +127,7 @@ class flare_simulation():
         initial_usd_collateral_volume_for_simulation = usd_collateral_volume
         min_usd_ucr = float('inf')
         min_flr_ucr = float('inf')
-
+        return
         try:
             flr_liquidation_table = []
             usd_liquidation_table = []
@@ -142,7 +142,6 @@ class flare_simulation():
             total_flare_liquidation = 0
             total_usd_liquidation = 0
             start_liquidation_time = 0
-            return
             for row in file:
                 current_time = row["timestamp_x"]
                 row_btc_usd_price = row["btc_usd_price"]
