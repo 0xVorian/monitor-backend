@@ -394,7 +394,7 @@ class flare_simulation():
         flare_btc_data["ask_price"] = flare_btc_data["adjust_price"]
         flare_btc_data["bid_price"] = flare_btc_data["adjust_price"]
 
-        # self.run_simulation(c, btc_usdt_data, flare_btc_data, SITE_ID)
+        self.run_simulation(c, btc_usdt_data, flare_btc_data, SITE_ID)
 
     def run_regular_simulation(self):
         c = {
@@ -422,7 +422,7 @@ class flare_simulation():
 
 if __name__ == '__main__':
     #flare_simulation().run_regular_simulation()
-    total_runs = 100
+    total_runs = 1
     Parallel(n_jobs=10)(
         delayed(flare_simulation().run_random_simulation)() for j in range(total_runs))
 
