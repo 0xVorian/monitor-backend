@@ -20,7 +20,7 @@ from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.model_selection import cross_val_score
 from sklearn.neural_network import MLPRegressor
-
+import uuid
 
 def get_gmx_price():
     file = open("data\\gmx_price.json")
@@ -205,12 +205,15 @@ def print_account_information_graph(json_file):
         plt.show()
 
 
-def get_site_id(SITE_ID):
+def get_site_id(SITE_ID, use_random=False):
     if str(os.path.sep) in SITE_ID:
         SITE_ID = SITE_ID.split(str(os.path.sep))[0]
     n = datetime.datetime.now()
     d = str(n.year) + "-" + str(n.month) + "-" + str(n.day) + "-" + str(n.hour) + "-" + str(n.minute)
-    SITE_ID = SITE_ID + os.path.sep + d
+    rnd = ""
+    if use_random:
+        rnd = "_" + str(uuid.uuid4())
+    SITE_ID = SITE_ID + os.path.sep + d + rnd
     os.makedirs("webserver" + os.path.sep + SITE_ID, exist_ok=True)
     return SITE_ID
 
