@@ -129,7 +129,6 @@ class flare_simulation():
         min_flr_ucr = float('inf')
 
         try:
-            return
             flr_liquidation_table = []
             usd_liquidation_table = []
             time_series_report = []
@@ -424,7 +423,11 @@ class flare_simulation():
 if __name__ == '__main__':
     #flare_simulation().run_regular_simulation()
     total_runs = 10
-    Parallel(n_jobs=10, prefer="threads")(
-        delayed(flare_simulation().run_random_simulation)() for j in range(total_runs))
+    try:
+        Parallel(n_jobs=10)(
+            delayed(flare_simulation().run_random_simulation)() for j in range(total_runs))
+    except Exception as e:
+        print("Exception !!!!!!!!!!!!!!!", str(e))
+        traceback.print_exc()
 
 # utils.publish_results("flare\\" + SITE_ID, None, True)
