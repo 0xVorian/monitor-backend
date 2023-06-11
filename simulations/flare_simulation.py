@@ -424,7 +424,7 @@ if __name__ == '__main__':
     #flare_simulation().run_regular_simulation()
     total_runs = 10
     try:
-        Parallel(n_jobs=10)(
+        Parallel(n_jobs=1)(
             delayed(flare_simulation().run_random_simulation)() for j in range(total_runs))
     except Exception as e:
         print("Exception !!!!!!!!!!!!!!!", str(e))
