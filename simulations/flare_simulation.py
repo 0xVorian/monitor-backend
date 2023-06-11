@@ -129,11 +129,10 @@ class flare_simulation():
         min_flr_ucr = float('inf')
 
         try:
-            return
             flr_liquidation_table = []
             usd_liquidation_table = []
             time_series_report = []
-
+            return
             file = self.crete_price_trajectory(eth_usdt_data, flare_btc_data, btc_usd_std, flr_btc_std)
             state = 0
             debt_volume /= file[0]["btc_usd_price"]
