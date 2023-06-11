@@ -127,7 +127,6 @@ class flare_simulation():
         initial_usd_collateral_volume_for_simulation = usd_collateral_volume
         min_usd_ucr = float('inf')
         min_flr_ucr = float('inf')
-        return
         try:
             flr_liquidation_table = []
             usd_liquidation_table = []
@@ -399,7 +398,7 @@ class flare_simulation():
     def run_regular_simulation(self):
         c = {
             "btc_usd_std": [1],
-            "flare_btc_std": [0.5],
+            "flare_btc_std": [1],
             "debt_volume": [self.initial_dept_volume],
             "usd_dl_x": [0.1, 0.2, 0.3],
             "usd_dl_recovery": [30, 60, 90],
