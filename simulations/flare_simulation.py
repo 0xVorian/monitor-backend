@@ -321,7 +321,7 @@ class flare_simulation():
         except Exception as e:
             min_usd_ucr = -100
             min_flare_ucr = -100
-            print(traceback.format_exc())
+            #print(traceback.format_exc())
             print("Exception!!!!!")
             exit()
 
