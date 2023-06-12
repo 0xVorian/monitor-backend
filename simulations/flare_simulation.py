@@ -69,7 +69,7 @@ class flare_simulation():
             arr.append({"timestamp_x": row["timestamp_x"],
                         "btc_usd_price": row["btc_usd_price"],
                         "flare_btc_price": row["flare_btc_price"],
-                        "flare_usd_price": row["flare_btc_price"] * (1 / row["btc_usd_price"])})
+                        "flare_usd_price": row["flare_btc_price"] * row["btc_usd_price"]})
         return arr
 
 
@@ -395,7 +395,7 @@ class flare_simulation():
         btc_usdt_data["ask_price"] = btc_usdt_data["adjust_price"]
         btc_usdt_data["bid_price"] = btc_usdt_data["adjust_price"]
 
-        flare_btc_data = brownian_motion.generate_brownian_motion(0.5, 100, 60 * 24, seed)
+        flare_btc_data = brownian_motion.generate_brownian_motion(0.5, 100, 60 * 24, seed + 1)
         flare_btc_data["open"] = flare_btc_data["adjust_price"]
         flare_btc_data["ask_price"] = flare_btc_data["adjust_price"]
         flare_btc_data["bid_price"] = flare_btc_data["adjust_price"]
@@ -425,17 +425,15 @@ class flare_simulation():
         flare_btc_data =  pd.read_csv(binance_btc_for_flare_file_name)
         self.run_simulation(c, btc_usdt_data, flare_btc_data, SITE_ID)
 
-save_time_seriws = False
-save_images = False
-initail_seed = int(sys.argv[1])
 if __name__ == '__main__':
-    #flare_simulation().run_regular_simulation()
-    total_runs = 50
-    try:
-        Parallel(n_jobs=10)(
-            delayed(flare_simulation().run_random_simulation)(initail_seed + j) for j in range(total_runs))
-    except Exception as e:
-        print("Exception !!!!!!!!!!!!!!!", str(e))
-        traceback.print_exc()
+    # save_time_seriws = False
+    # save_images = True
+    # flare_simulation().run_regular_simulation()
+
+    save_time_seriws = False
+    save_images = True
+    initail_seed = int(sys.argv[1])
+    total_runs = 100
+    Parallel(n_jobs=10)(delayed(flare_simulation().run_random_simulation)(initail_seed + j) for j in range(total_runs))
 
 # utils.publish_results("flare\\" + SITE_ID, None, True)
