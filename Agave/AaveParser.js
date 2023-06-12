@@ -80,20 +80,20 @@ class Aave {
     getData() {
         const result =
         {
-            "markets" : JSON.stringify(this.markets),
-            "prices" : JSON.stringify(this.prices),
+            "markets" : this.markets,
+            "prices" : this.prices,
             "lastUpdateTime" : this.lastUpdateTime,
-            "liquidationIncentive" : JSON.stringify(this.liquidationIncentive),
-            "collateralFactors" : JSON.stringify(this.collateralFactors),
-            "names" : JSON.stringify(this.names),
-            "borrowCaps" : JSON.stringify(this.borrowCaps),
-            "collateralCaps" : JSON.stringify(this.collateralCaps),
-            "decimals" : JSON.stringify(this.decimals),
-            "underlying" : JSON.stringify(this.underlying),
-            "closeFactor" : JSON.stringify(this.closeFactor),
-            "totalCollateral" : JSON.stringify(this.totalCollateral),
-            "totalBorrows" : JSON.stringify(this.totalBorrows),                          
-            "users" : JSON.stringify(this.users)
+            "liquidationIncentive" : this.liquidationIncentive,
+            "collateralFactors" : this.collateralFactors,
+            "names" : this.names,
+            "borrowCaps" : this.borrowCaps,
+            "collateralCaps" : this.collateralCaps,
+            "decimals" : this.decimals,
+            "underlying" : this.underlying,
+            "closeFactor" : this.closeFactor,
+            "totalCollateral" : this.totalCollateral,
+            "totalBorrows" : this.totalBorrows,                          
+            "users" : this.users
         }   
         try {
             fs.writeFileSync(this.fileName, JSON.stringify(result));
