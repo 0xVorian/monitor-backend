@@ -75,6 +75,10 @@ class Aave {
 
       this.totalCollateral = {}
       this.totalBorrows = {}   
+
+      // this simple cache store token symbol to avoid calling the RPC to get the symbol each time
+      // we call the getSupplyBorrow() function
+      this.tokenCache = {};
     }
 
     getData() {
@@ -120,10 +124,6 @@ class Aave {
 
         return output
     }
-
-    // this simple cache store token symbol to avoid calling the RPC to get the symbol each time
-    // we call the getSupplyBorrow() function
-    tokenCache = {};
 
     async getSupplyBorrow() {
         const currentSupply = {};
