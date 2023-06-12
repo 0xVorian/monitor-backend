@@ -3,7 +3,8 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 
-def generate_brownian_motion(std, initial_value, num_steps):
+def generate_brownian_motion(std, initial_value, num_steps, seed):
+    np.random.seed(seed)
     dt = 1.0 / num_steps
     num_samples = num_steps + 1
     increments = np.random.normal(0, std * np.sqrt(dt), num_samples)
