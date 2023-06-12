@@ -431,7 +431,7 @@ if __name__ == '__main__':
     # flare_simulation().run_regular_simulation()
 
     save_time_seriws = False
-    save_images = True
+    save_images = False
     initail_seed = int(sys.argv[1])
     total_runs = 100
     Parallel(n_jobs=10)(delayed(flare_simulation().run_random_simulation)(initail_seed + j) for j in range(total_runs))
