@@ -1,5 +1,5 @@
 {
-  "seed" : "ignore - not a random run",
+  "Seed" : "ignore - not a random run",
   "BtcStd" : "Asset standard deviation, divided by BTC/USD standard deviation",
   "FlrStd" : "Flare/BTC standard deviation, divided by BTC/USD standard deviation",
   "MinUsdCr" : "MCR for USD",
