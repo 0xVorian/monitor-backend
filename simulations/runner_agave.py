@@ -165,9 +165,6 @@ def fix_usd_volume_for_slippage():
                 print('old value:', current_data[base_symbol][quote_symbol], "new value:", current_data[new_base][new_quote])
                 current_data[base_symbol][quote_symbol] = current_data[new_base][new_quote]
 
-
-            
-
     balancer_file.close()
     current_file.close()
     fp = open("webserver" + os.path.sep + SITE_ID + os.path.sep + "usd_volume_for_slippage.json", "w")
