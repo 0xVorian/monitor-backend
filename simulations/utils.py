@@ -526,7 +526,7 @@ def compare_to_prod_and_send_alerts(old_alerts, data_time, name, base_SITE_ID, c
                         else:
                             message_key = f'{alert_param["tg_channel_id"]}.{name}.supply.diff.{token_symbol}'
                             last_value = 0 if message_key not in old_alerts else old_alerts[message_key]
-                            if message_key not in old_alerts or abs(old_alerts[message_key]) * 1.3 < abs(pct_diff) \
+                            if message_key not in old_alerts or abs(old_alerts[message_key]) * 2 < abs(pct_diff) \
                                     or np.sign(old_alerts[message_key]) != np.sign(pct_diff):
                                 print(f"Sending to {alert_param['tg_channel_id']} TG", message_key)
                                 send_telegram_alert(alert_param['tg_bot_id'], alert_param['tg_channel_id'], message)
@@ -572,7 +572,7 @@ def compare_to_prod_and_send_alerts(old_alerts, data_time, name, base_SITE_ID, c
                         else:
                             message_key = f'{alert_param["tg_channel_id"]}.{name}.borrow.diff.{token_symbol}'
                             last_value = 0 if message_key not in old_alerts else old_alerts[message_key]
-                            if message_key not in old_alerts or abs(old_alerts[message_key]) * 1.3 < abs(pct_diff) \
+                            if message_key not in old_alerts or abs(old_alerts[message_key]) * 2 < abs(pct_diff) \
                                     or np.sign(old_alerts[message_key]) != np.sign(pct_diff):
                                 print(f"Sending to {alert_param['tg_channel_id']} TG", message_key)
                                 send_telegram_alert(alert_param['tg_bot_id'], alert_param['tg_channel_id'], message)
