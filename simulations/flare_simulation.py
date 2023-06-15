@@ -456,22 +456,21 @@ class flare_simulation():
                 (df["safe_flare_cr"] == row["safe_flare_cr"]) &
                 (df["usd_collateral_ratio"] == row["usd_collateral_ratio"])
                 ]
-            print(len(temp_df))
-            if len(temp_df) > 100:
-                for c in uniques.columns:
-                    print(row[c])
-                exit()
+            seed = temp_df.sort_values("min_usd_cr").iloc[int(len(temp_df) * 0.9)]["seed"]
+            print(index, seed)
+            uniques.at[index,'seed"'] = seed
+        uniques.to_csv("uniques.csv")
 
 if __name__ == '__main__':
-    flare_simulation().analyaze_random_results()
+    # flare_simulation().analyaze_random_results()
     # save_time_seriws = False
     # save_images = True
     # flare_simulation().run_regular_simulation()
 
-    # save_time_seriws = False
-    # save_images = False
-    # initail_seed = int(sys.argv[1])
-    # total_runs = 100
-    # Parallel(n_jobs=10)(delayed(flare_simulation().run_random_simulation)(initail_seed + j) for j in range(total_runs))
+    save_time_seriws = False
+    save_images = False
+    initail_seed = int(sys.argv[1])
+    total_runs = 100
+    Parallel(n_jobs=10)(delayed(flare_simulation().run_random_simulation)(initail_seed + j) for j in range(total_runs))
 
 # utils.publish_results("flare\\" + SITE_ID, None, True)
