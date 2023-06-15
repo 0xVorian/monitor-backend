@@ -1,3 +1,4 @@
+import glob
 import itertools
 import os
 import sys
@@ -96,7 +97,8 @@ class flare_simulation():
     def create_liquidation_df(self, collateral_volume, debt_volume, min_cr):
         return pd.DataFrame()
 
-    def run_single_simulation(self, eth_usdt_data, flare_btc_data,
+    def run_single_simulation(self,
+                              eth_usdt_data, flare_btc_data,
                               btc_usd_std, flr_btc_std,
                               debt_volume, min_usd_cr, safe_usd_cr,
                               usd_collateral_ratio,
@@ -341,8 +343,8 @@ class flare_simulation():
                     "usd_dl_recovery": usd_dl_recovery,
                     "flare_dl_x": initial_flr_dl_x,
                     "flare_dl_recovery": flr_dl_recovery,
-                    "min_usd_cr": safe_usd_cr,
-                    "min_flare_cr": safe_flare_cr,
+                    "min_usd_cr": min_usd_cr,
+                    "min_flare_cr": min_flare_cr,
                     "safe_usd_cr": safe_usd_cr,
                     "safe_flare_cr": safe_flare_cr,
                     "usd_collateral_ratio": usd_collateral_ratio,
@@ -425,15 +427,51 @@ class flare_simulation():
         flare_btc_data =  pd.read_csv(binance_btc_for_flare_file_name)
         self.run_simulation(c, btc_usdt_data, flare_btc_data, SITE_ID)
 
+
+    def analyaze_random_results(self):
+        # files = glob.glob("flare_data\\**\\*.csv", recursive=True)
+        # df = pd.concat((pd.read_csv(f) for f in files), ignore_index=True)
+        # df.to_csv('xxx.csv')
+        gg = ["btc_usd_std", "flr_btc_std", "debt_volume", "usd_collateral_volume", "flare_collateral_volume",
+              "liquidation_incentive_time_factor", "usd_dl_x", "usd_dl_recovery", "flare_dl_x", "flare_dl_recovery",
+              "min_usd_cr", "min_flare_cr", "safe_usd_cr", "safe_flare_cr", "usd_collateral_ratio"]
+        df = pd.read_csv("xxx.csv")
+        seed = df.iloc[0]["seed"]
+        uniques = df.loc[df["seed"] == seed][gg]
+        for index, row in uniques.iterrows():
+            temp_df = df.loc[
+                (df["btc_usd_std"] == row["btc_usd_std"]) &
+                (df["flr_btc_std"] == row["flr_btc_std"]) &
+                (df["debt_volume"] == row["debt_volume"]) &
+                (df["usd_collateral_volume"] == row["usd_collateral_volume"]) &
+                (df["flare_collateral_volume"] == row["flare_collateral_volume"]) &
+                (df["liquidation_incentive_time_factor"] == row["liquidation_incentive_time_factor"]) &
+                (df["usd_dl_x"] == row["usd_dl_x"]) &
+                (df["usd_dl_recovery"] == row["usd_dl_recovery"]) &
+                (df["flare_dl_x"] == row["flare_dl_x"]) &
+                (df["flare_dl_recovery"] == row["flare_dl_recovery"]) &
+                (df["min_usd_cr"] == row["min_usd_cr"]) &
+                (df["min_flare_cr"] == row["min_flare_cr"]) &
+                (df["safe_usd_cr"] == row["safe_usd_cr"]) &
+                (df["safe_flare_cr"] == row["safe_flare_cr"]) &
+                (df["usd_collateral_ratio"] == row["usd_collateral_ratio"])
+                ]
+            print(len(temp_df))
+            if len(temp_df) > 100:
+                for c in uniques.columns:
+                    print(row[c])
+                exit()
+
 if __name__ == '__main__':
+    flare_simulation().analyaze_random_results()
     # save_time_seriws = False
     # save_images = True
     # flare_simulation().run_regular_simulation()
 
-    save_time_seriws = False
-    save_images = False
-    initail_seed = int(sys.argv[1])
-    total_runs = 100
-    Parallel(n_jobs=10)(delayed(flare_simulation().run_random_simulation)(initail_seed + j) for j in range(total_runs))
+    # save_time_seriws = False
+    # save_images = False
+    # initail_seed = int(sys.argv[1])
+    # total_runs = 100
+    # Parallel(n_jobs=10)(delayed(flare_simulation().run_random_simulation)(initail_seed + j) for j in range(total_runs))
 
 # utils.publish_results("flare\\" + SITE_ID, None, True)
