@@ -77,8 +77,9 @@ class flare_simulation():
     def crete_price_trajectory(self, eth_usd_data, binance_btc_for_flare_data, btc_usd_std, flr_btc_std):
 
         data1 = eth_usd_data
-        data1["btc_usd_price"] = data1["open"]
-
+        data1["btc_usd_price"] = data1["ask_price"]
+        binance_btc_for_flare_data["ask_price"] = binance_btc_for_flare_data["open"]
+        binance_btc_for_flare_data["bid_price"] = binance_btc_for_flare_data["open"]
         data2 = self.adjust_series_price(copy.deepcopy(binance_btc_for_flare_data), flr_btc_std)
         min_len = min(len(data1), len(data2))
 
@@ -87,7 +88,6 @@ class flare_simulation():
         data1 = data1.reset_index(drop=True)
         data2 = data2.reset_index(drop=True)
         data1["flare_btc_price"] = data2["adjust_price"]
-        data1["timestamp_x"] = data2["timestamp_x"]
         dai_eth_array = self.convert_to_array(data1)
         return dai_eth_array
 
@@ -133,6 +133,7 @@ class flare_simulation():
         min_usd_ucr = float('inf')
         min_flr_ucr = float('inf')
         running_score = 0
+
         try:
             flr_liquidation_table = []
             usd_liquidation_table = []
@@ -568,18 +569,18 @@ class flare_simulation():
 
 if __name__ == '__main__':
 
-    # save_time_seriws = False
-    # save_images = False
-    # initail_seed = int(sys.argv[1])
-    # total_runs = 1
-    # Parallel(n_jobs=10)(delayed(flare_simulation().run_random_simulation)(initail_seed + j) for j in range(total_runs))
+    save_time_seriws = False
+    save_images = False
+    initail_seed = int(sys.argv[1])
+    total_runs = 50
+    Parallel(n_jobs=10)(delayed(flare_simulation().run_random_simulation)(initail_seed + j) for j in range(total_runs))
 
     # flare_simulation().analyaze_random_results()
     #
     # save_time_seriws = True
     # save_images = True
     # flare_simulation().run_simulations_on_random_analisys("00")
-    flare_simulation().create_timeseries_for_seed(1018)
+    # flare_simulation().create_timeseries_for_seed(1018)
 
     # save_time_seriws = False
     # save_images = True
