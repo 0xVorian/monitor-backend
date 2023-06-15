@@ -76,11 +76,12 @@ class flare_simulation():
 
     def crete_price_trajectory(self, eth_usd_data, binance_btc_for_flare_data, btc_usd_std, flr_btc_std):
 
-        data1 = binance_btc_for_flare_data
+        data1 = eth_usd_data
         data1["btc_usd_price"] = data1["open"]
 
-        data2 = self.adjust_series_price(copy.deepcopy(eth_usd_data), flr_btc_std)
+        data2 = self.adjust_series_price(copy.deepcopy(binance_btc_for_flare_data), flr_btc_std)
         min_len = min(len(data1), len(data2))
+
         data1 = data1.loc[:min_len - 1]
         data2 = data2.loc[:min_len - 1]
         data1 = data1.reset_index(drop=True)
@@ -343,7 +344,6 @@ class flare_simulation():
                     "total_flare_liquidation_for_report": total_flare_liquidation_for_report,
                     "seed": seed}
 
-
     def run_simulation(self, c, eth_usdt_data, flare_btc_data, SITE_ID, seed = 0):
         summary_report = []
         all = itertools.product(c["btc_usd_std"], c["flare_btc_std"],
@@ -391,7 +391,7 @@ class flare_simulation():
         flare_btc_data["ask_price"] = flare_btc_data["adjust_price"]
         flare_btc_data["bid_price"] = flare_btc_data["adjust_price"]
 
-        self.run_simulation(c, btc_usdt_data, flare_btc_data, SITE_ID, seed)
+        result = self.run_simulation(c, btc_usdt_data, flare_btc_data, SITE_ID, seed)
 
     def run_regular_simulation(self):
         c = {
@@ -418,13 +418,13 @@ class flare_simulation():
 
 
     def analyaze_random_results(self):
-        # files = glob.glob("flare_data\\**\\*.csv", recursive=True)
-        # df = pd.concat((pd.read_csv(f) for f in files), ignore_index=True)
+        files = glob.glob("flare_data\\**\\*.csv", recursive=True)
+        df = pd.concat((pd.read_csv(f) for f in files), ignore_index=True)
         # df.to_csv('xxx.csv')
         gg = ["btc_usd_std", "flr_btc_std", "debt_volume", "usd_collateral_volume", "flare_collateral_volume",
               "liquidation_incentive_time_factor", "usd_dl_x", "usd_dl_recovery", "flare_dl_x", "flare_dl_recovery",
               "min_usd_cr", "min_flare_cr", "safe_usd_cr", "safe_flare_cr", "usd_collateral_ratio"]
-        df = pd.read_csv("xxx.csv")
+        #df = pd.read_csv("xxx.csv")
         seed = df.iloc[0]["seed"]
         uniques = df.loc[df["seed"] == seed][gg]
         for index, row in uniques.iterrows():
@@ -472,10 +472,10 @@ class flare_simulation():
                 print(min_usd_ucr_00, min_usd_ucr_10)
                 exit()
 
-            print(index)
+            print(index, len(temp_df))
             uniques.at[index,'seed_00'] = seed_00
             uniques.at[index, 'min_usd_ucr_00'] = min_usd_ucr_00
-            uniques.at[index, 'min_flare_ucr_00"'] = min_flare_ucr_00
+            uniques.at[index, 'min_flare_ucr_00'] = min_flare_ucr_00
 
             uniques.at[index,'seed_01'] = seed_01
             uniques.at[index, 'min_usd_ucr_01'] = min_usd_ucr_01
@@ -504,16 +504,18 @@ class flare_simulation():
         flare_btc_data["ask_price"] = flare_btc_data["adjust_price"]
         flare_btc_data["bid_price"] = flare_btc_data["adjust_price"]
 
-        plt.plot(btc_usdt_data["open"], label="btc usd")
-        plt.plot(flare_btc_data["open"], label="flare btc")
+        file = self.crete_price_trajectory(btc_usdt_data, flare_btc_data, 1, 1)
+        report_df = pd.DataFrame(file)
+        plt.plot(report_df["btc_usd_price"] / report_df.iloc[0]["btc_usd_price"], label="btc usd")
+        plt.plot((1 / report_df["flare_btc_price"]) / (1 / report_df.iloc[0]["flare_btc_price"]), label="flare btc")
+        plt.title("Seed: " + str(seed))
         plt.legend()
         plt.show()
         plt.cla()
         plt.close()
     def run_simulation_on_random_analisys(self, SITE_ID, record, percentile):
-        print("run")
-        seed = int(record["seed_" + percentile])
 
+        seed = int(record["seed_" + str(percentile)])
         btc_usdt_data = brownian_motion.generate_brownian_motion(0.3, 100, 60 * 24, seed)
         btc_usdt_data["open"] = btc_usdt_data["adjust_price"]
         btc_usdt_data["ask_price"] = btc_usdt_data["adjust_price"]
@@ -523,39 +525,64 @@ class flare_simulation():
         flare_btc_data["open"] = flare_btc_data["adjust_price"]
         flare_btc_data["ask_price"] = flare_btc_data["adjust_price"]
         flare_btc_data["bid_price"] = flare_btc_data["adjust_price"]
-        self.run_single_simulation(btc_usdt_data, flare_btc_data,
+
+        result = flare_simulation().run_single_simulation(
+                                   btc_usdt_data,
+                                   flare_btc_data,
                                    1, 1,
-                                   record["debt_volume"], record["min_usd_cr"], record["safe_usd_cr"],
+                                   record["debt_volume"], record["min_usd_cr"], record["safe_usd_cr"] - record["min_usd_cr"],
                                    record["usd_collateral_ratio"],
                                    record["usd_dl_x"], record["flare_dl_x"],
                                    record["usd_dl_recovery"], record["flare_dl_recovery"],
-                                   record["min_flare_cr"], record["safe_flare_cr"],
+                                   record["min_flare_cr"], record["safe_flare_cr"] - record["min_flare_cr"],
                                    record["liquidation_incentive_time_factor"],
                                    SITE_ID, seed)
+
+        gg = ["btc_usd_std", "flr_btc_std", "debt_volume",
+              "liquidation_incentive_time_factor", "usd_dl_x", "usd_dl_recovery", "flare_dl_x", "flare_dl_recovery",
+              "min_usd_cr", "min_flare_cr", "safe_usd_cr", "safe_flare_cr", "usd_collateral_ratio"]
+
+        for g in gg:
+            if result[g] != record[g]:
+                print(g, result[g], record[g])
+                exit()
+
+        if round(result["min_usd_ucr"],2) != round(record["min_usd_ucr_" + str(percentile)],2):
+            print("error in usd", result["min_usd_ucr"], record["min_usd_ucr_" + str(percentile)])
+            exit()
+
+        if round(result["min_flare_ucr"],2) != round(record["min_flare_ucr_" + str(percentile)],2):
+            print("error in flare", result["min_flare_ucr"], record["min_flare_ucr_" + str(percentile)])
+            exit()
+
+        print(seed, result["min_usd_ucr"], record["min_usd_ucr_" + str(percentile)])
+
+        return result
 
     def run_simulations_on_random_analisys(self, percentile, file_name="uniques.csv"):
         SITE_ID = utils.get_site_id("flare")
         df = pd.read_csv(file_name)
         records = df.to_dict('records')
-        Parallel(n_jobs=10)(delayed(flare_simulation().run_simulation_on_random_analisys)(SITE_ID, r, percentile) for r in records)
+        print(len(records))
+        Parallel(n_jobs=10)(delayed(self.run_simulation_on_random_analisys)(SITE_ID, r, percentile) for r in records)
 
 if __name__ == '__main__':
-    # flare_simulation().analyaze_random_results()
-
-    flare_simulation().create_timeseries_for_seed(1029)
-    flare_simulation().create_timeseries_for_seed(1018)
 
     # save_time_seriws = False
+    # save_images = False
+    # initail_seed = int(sys.argv[1])
+    # total_runs = 1
+    # Parallel(n_jobs=10)(delayed(flare_simulation().run_random_simulation)(initail_seed + j) for j in range(total_runs))
+
+    # flare_simulation().analyaze_random_results()
+    #
+    # save_time_seriws = True
     # save_images = True
-    # flare_simulation().run_simulations_on_random_analisys("01")
+    # flare_simulation().run_simulations_on_random_analisys("00")
+    flare_simulation().create_timeseries_for_seed(1018)
 
     # save_time_seriws = False
     # save_images = True
     # flare_simulation().run_regular_simulation()
 
-    # save_time_seriws = False
-    # save_images = False
-    # initail_seed = int(sys.argv[1])
-    # total_runs = 100
-    # Parallel(n_jobs=10)(delayed(flare_simulation().run_random_simulation)(initail_seed + j) for j in range(total_runs))
 
