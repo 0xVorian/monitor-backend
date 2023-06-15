@@ -405,6 +405,8 @@ def compare_to_prod_and_send_alerts(old_alerts, data_time, name, base_SITE_ID, c
 
     for market in oracle_file:
         if market == "json_time": continue
+        if market in ignore_list: continue
+
         oracle = float(oracle_file[market]["oracle"])
         # if oracle is 0 (or less?), don't need to check
         if oracle <= 0: continue
@@ -492,12 +494,18 @@ def compare_to_prod_and_send_alerts(old_alerts, data_time, name, base_SITE_ID, c
         
         # compare supply
         for token_symbol in current_supply_borrow['currentSupply']:
+            if token_symbol in ignore_list: continue
             current_supply_in_token = current_supply_borrow['currentSupply'][token_symbol]
             oracle_price_for_token = float(oracle_file[token_symbol]["oracle"])
             prod_supply_in_token = prod_supply_borrow['supply'][token_symbol] / oracle_price_for_token
-            if current_supply_in_token == 0:
+            if prod_supply_in_token == 0:
                 continue # avoid division per 0
-            pct_diff = (current_supply_in_token - prod_supply_in_token) / current_supply_in_token
+            
+            diff_in_usd = abs(prod_supply_in_token - current_supply_in_token) * oracle_price_for_token
+            if diff_in_usd < 100000:
+                continue # do not send alert if diff is less than $100k
+
+            pct_diff = (current_supply_in_token - prod_supply_in_token) / prod_supply_in_token
             print(token_symbol, 'current supply:', current_supply_in_token, 'prod supply:', prod_supply_in_token)
             print(token_symbol, 'diff:', pct_diff)
             
@@ -521,7 +529,7 @@ def compare_to_prod_and_send_alerts(old_alerts, data_time, name, base_SITE_ID, c
                         else:
                             message_key = f'{alert_param["tg_channel_id"]}.{name}.supply.diff.{token_symbol}'
                             last_value = 0 if message_key not in old_alerts else old_alerts[message_key]
-                            if message_key not in old_alerts or abs(old_alerts[message_key]) * 1.3 < abs(pct_diff) \
+                            if message_key not in old_alerts or abs(old_alerts[message_key]) * 2 < abs(pct_diff) \
                                     or np.sign(old_alerts[message_key]) != np.sign(pct_diff):
                                 print(f"Sending to {alert_param['tg_channel_id']} TG", message_key)
                                 send_telegram_alert(alert_param['tg_bot_id'], alert_param['tg_channel_id'], message)
@@ -531,12 +539,18 @@ def compare_to_prod_and_send_alerts(old_alerts, data_time, name, base_SITE_ID, c
 
         # compare borrow
         for token_symbol in current_supply_borrow['currentBorrow']:
+            if token_symbol in ignore_list: continue
             current_borrow_in_token = current_supply_borrow['currentBorrow'][token_symbol]
             oracle_price_for_token = float(oracle_file[token_symbol]["oracle"])
             prod_borrow_in_token = prod_supply_borrow['borrow'][token_symbol] / oracle_price_for_token
-            if current_borrow_in_token == 0:
+            if prod_borrow_in_token == 0:
                 continue # avoid division per 0
-            pct_diff = (current_borrow_in_token - prod_borrow_in_token) / current_borrow_in_token
+            
+            diff_in_usd = abs(prod_borrow_in_token - current_borrow_in_token) * oracle_price_for_token
+            if diff_in_usd < 100000:
+                continue # do not send alert if diff is less than $100k
+
+            pct_diff = (current_borrow_in_token - prod_borrow_in_token) / prod_borrow_in_token
             print(token_symbol, 'current borrow:', current_borrow_in_token, 'prod borrow:', prod_borrow_in_token)
             print(token_symbol, 'diff:', pct_diff)
             
@@ -561,7 +575,7 @@ def compare_to_prod_and_send_alerts(old_alerts, data_time, name, base_SITE_ID, c
                         else:
                             message_key = f'{alert_param["tg_channel_id"]}.{name}.borrow.diff.{token_symbol}'
                             last_value = 0 if message_key not in old_alerts else old_alerts[message_key]
-                            if message_key not in old_alerts or abs(old_alerts[message_key]) * 1.3 < abs(pct_diff) \
+                            if message_key not in old_alerts or abs(old_alerts[message_key]) * 2 < abs(pct_diff) \
                                     or np.sign(old_alerts[message_key]) != np.sign(pct_diff):
                                 print(f"Sending to {alert_param['tg_channel_id']} TG", message_key)
                                 send_telegram_alert(alert_param['tg_bot_id'], alert_param['tg_channel_id'], message)
