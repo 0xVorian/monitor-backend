@@ -62,11 +62,6 @@ def create_simulation_config(SITE_ID, c, ETH_PRICE, assets_to_simulate, assets_a
                 new_c["series_std_ratio"] = std_ratio
                 new_c["volume_for_slippage_10_percentss"] = [slippage]
                 new_c["json_time"] = now_time
-                # if "DAI" in base_to_simulation or "DAI" in quote_to_simulation:
-                #     new_c["volume_for_slippage_10_percents_price_drop"] = 50_000 / ETH_PRICE
-                #     new_c["price_recovery_times"] = [2]
-                # else:
-                #     new_c["price_recovery_times"] = [0]
 
                 max_collateral = collateral_caps[inv_names[base_to_simulation]]
                 max_debt = borrow_caps[inv_names[quote_to_simulation]]
@@ -105,9 +100,7 @@ def create_simulation_config(SITE_ID, c, ETH_PRICE, assets_to_simulate, assets_a
                                         900_000 / ETH_PRICE, 1_000_000 / ETH_PRICE,
                                         1_500_000 / ETH_PRICE, 2_000_000 / ETH_PRICE, 2_500_000 / ETH_PRICE,
                                         3_000_000 / ETH_PRICE,
-                                        4_000_000 / ETH_PRICE, 5_000_000 / ETH_PRICE, 5_000_000 / ETH_PRICE,
-                                        6_000_000 / ETH_PRICE, 7_000_000 / ETH_PRICE, 8_000_000 / ETH_PRICE,
-                                        9_000_000 / ETH_PRICE, 10_000_000 / ETH_PRICE, 15_000_000 / ETH_PRICE]
+                                        4_000_000 / ETH_PRICE, 5_000_000 / ETH_PRICE]
                 if 0 in new_c["collaterals"]:
                     print(new_c)
                 new_c["current_debt"] = current_debt / ETH_PRICE
@@ -116,113 +109,28 @@ def create_simulation_config(SITE_ID, c, ETH_PRICE, assets_to_simulate, assets_a
     fp = open("webserver" + os.path.sep + SITE_ID + os.path.sep + "simulation_configs.json", "w")
     json.dump(data, fp)
 
-def fix_wstETH_price():
-    oracle_file = open("webserver" + os.path.sep + SITE_ID + os.path.sep + "oracles.json")
-    oracle_data = json.load(oracle_file)
-    oracle_file.close()
-
-    print('updating wstETH price, from:', oracle_data['wstETH']['dex_price'],'to:', oracle_data['wstETH']['oracle'])
-    oracle_data['wstETH']['dex_price'] = oracle_data['wstETH']['oracle']
-    
-    fp = open("webserver" + os.path.sep + SITE_ID + os.path.sep + "oracles.json", "w")
-    json.dump(oracle_data, fp)
-    fp.close()
 
 def fix_usd_volume_for_slippage():
-    balancer_file = open(balancer_volume_json_file)
-    balancer_data = json.load(balancer_file)
-
-    current_file = open("webserver" + os.path.sep + SITE_ID + os.path.sep + "usd_volume_for_slippage.json")
-    current_data = json.load(current_file)
-
-    # overwrite current data with balancer data
-    for base_symbol in balancer_data: 
-        if base_symbol == 'json_time': continue
-        for quote_symbol in balancer_data[base_symbol]:
-            print("overwritting volume for", base_symbol, quote_symbol, current_data[base_symbol][quote_symbol], "with", balancer_data[base_symbol][quote_symbol])
-            current_data[base_symbol][quote_symbol] = balancer_data[base_symbol][quote_symbol]
-    
-    # for every wstETH pairs (whether base or quote), replace value by ETH value
-    # e.g:
-    # - wstETH/USDC => ETH/USDC 
-    # - GNO/wstETH => GNO/ETH
-    for base_symbol in current_data: 
-        if base_symbol == 'json_time': continue
-        for quote_symbol in current_data[base_symbol]:
-            if base_symbol == 'wstETH' and quote_symbol == 'WETH':
-                continue
-            if quote_symbol == 'wstETH' and base_symbol == 'WETH':
-                continue
-
-            if base_symbol == 'wstETH' or quote_symbol == 'wstETH':
-                new_base = base_symbol
-                new_quote = quote_symbol
-                if new_base == 'wstETH':
-                    new_base = 'WETH'
-                if new_quote == 'wstETH':
-                    new_quote = 'WETH'
-                print("overwritting volume for", base_symbol, quote_symbol, 'with new symbols:', new_base, new_quote)
-                print('old value:', current_data[base_symbol][quote_symbol], "new value:", current_data[new_base][new_quote])
-                current_data[base_symbol][quote_symbol] = current_data[new_base][new_quote]
-
-    balancer_file.close()
-    current_file.close()
+    file = open("webserver" + os.sep + '4\\2022-11-27-17-29' + os.sep + "usd_volume_for_slippage.json")
+    data = json.load(file)
+    for d in data:
+        if d == 'json_time': continue
+        for a in data[d]:
+            if d == "WXDAI" or a == "WXDAI":
+                print("----------------------------------------")
+                data[d][a]["volume"] *= 2
+    file.close()
     fp = open("webserver" + os.path.sep + SITE_ID + os.path.sep + "usd_volume_for_slippage.json", "w")
-    json.dump(current_data, fp)
+    json.dump(data, fp)
     fp.close()
 
-def get_supply_borrow():
-    supply_borrow_file = open(supply_borrow_json_file)
-    supply_borrow = json.load(supply_borrow_file)
-    supply_borrow_file.close()
-    return supply_borrow
-
-def get_alert_params():
-    alert_params = []
-    
-    # RISK DAO CHANNEL: send all alerts to risk_dao_channel
-    alert_params.append({
-        "is_default": True, # is default mean it's the risk dao general channel where all msg are sent
-        "tg_bot_id": private_config.risk_dao_bot,
-        "tg_channel_id": private_config.risk_dao_channel,
-        "oracle_threshold": 3, # oracle threshold is always in absolute
-        "slippage_threshold": 10, # liquidity threshold before sending alert
-        "only_negative": False, # only send liquidity alert if the new volume < old volume
-        "supply_borrow_threshold": 10, # supply/borrow threshold before sending alert
-    })
-
-    # REAL AGAVE ALERT CHANNEL: send only oracle > 3% and liquidity alerts where <-50%
-    alert_params.append({
-        "is_default": False, # is default mean it's the risk dao general channel where all msg are sent
-        "tg_bot_id": private_config.risk_dao_bot,
-        "tg_channel_id": private_config.agave_channel,
-        "oracle_threshold": 3, # oracle threshold is always in absolute
-        "slippage_threshold": 50, # liquidity threshold before sending alert
-        "only_negative": True, # only send liquidity alert if the new volume < old volume
-        "supply_borrow_threshold": 10, # supply/borrow threshold before sending alert
-    })
-    
-    # PRIVATE AGAVE CHANNEL: alerts when liquidity <-10%
-    alert_params.append({
-        "is_default": False, # is default mean it's the risk dao general channel where all msg are sent
-        "tg_bot_id": private_config.risk_dao_bot,
-        "tg_channel_id": private_config.agave_channel_internal,
-        "oracle_threshold": 3, # oracle threshold is always in absolute
-        "slippage_threshold": 10, # liquidity threshold before sending alert
-        "only_negative": True, # only send liquidity alert if the new volume < old volume
-        "supply_borrow_threshold": 10, # supply/borrow threshold before sending alert
-    })
-
-    return alert_params
 
 lending_platform_json_file = ".." + os.path.sep + "Agave" + os.path.sep + "data.json"
 oracle_json_file = ".." + os.path.sep + "Agave" + os.path.sep + "oracle.json"
-balancer_volume_json_file = ".." + os.path.sep + "Agave" + os.path.sep + "balancer_volume_for_slippage.json"
-supply_borrow_json_file = ".." + os.path.sep + "Agave" + os.path.sep + "agave_supply_borrow.json"
 
-assets_to_simulate = ['USDC', 'WXDAI', 'LINK', 'GNO', 'WBTC', 'WETH', 'FOX', "USDT", "EURe", "wstETH"]
+assets_to_simulate = ['USDC', 'WXDAI', 'LINK', 'GNO', 'WBTC', 'WETH', 'FOX', "USDT"]
 assets_aliases = {'USDC': 'USDC', 'WXDAI': 'DAI', 'LINK': 'LINK', 'GNO': 'GNO', 'WBTC': 'BTC', 'WETH': 'ETH',
-                  'FOX': 'FOX', "USDT":"USDC", "EURe":"EUR", "wstETH": "wstETH"}
+                  'FOX': 'FOX', "USDT":"USDC"}
 
 ETH_PRICE = 1600
 print_time_series = False
@@ -255,22 +163,10 @@ if __name__ == '__main__':
     print("ALERT MODE", alert_mode)
     send_alerts = len(sys.argv) > 3
     print("SEND ALERTS", send_alerts)
-
     while True:
-        startDate = round(datetime.datetime.now().timestamp())
-        if alert_mode:
-            # if in alert mode, record monitoring data
-            utils.record_monitoring_data({
-                "name": 'Agave',
-                "status": "running",
-                "lastStart": startDate,
-                'runEvery': 30 * 60
-            })
-
         if os.path.sep in SITE_ID:
             SITE_ID = SITE_ID.split(os.path.sep)[0]
         SITE_ID = utils.get_site_id(SITE_ID)
-        #SITE_ID = "4\\2023-3-21-8-40"
         file = open(lending_platform_json_file)
         data = json.load(file)
 
@@ -308,66 +204,34 @@ if __name__ == '__main__':
                                                                 borrow_caps,
                                                                 underlying)
         base_runner.create_account_information(SITE_ID, users_data, totalAssetCollateral, totalAssetBorrow, inv_names,
-                                            assets_liquidation_data)
+                                               assets_liquidation_data)
         base_runner.create_oracle_information(SITE_ID, prices, chain_id, names, assets_aliases, kp.get_price)
         create_dex_information()
         base_runner.create_whale_accounts_information(SITE_ID, users_data, assets_to_simulate)
         base_runner.create_open_liquidations_information(SITE_ID, users_data, assets_to_simulate)
-        
-        ignore_list=[]
-        if alert_mode:
-            # build ignore list for each tokens with <= $10 collateral caps
-            for tokenAddr in collateral_caps: 
-                tokenName = names[tokenAddr]
-                tokenCap = collateral_caps[tokenAddr]
-                if tokenCap <= 10:
-                    print('Adding', tokenName, 'to the ignore list because collateralCap:', tokenCap)
-                    ignore_list.append(tokenName)
-            
-            # for every tokens in the ignore list, delete entry in inv_names before calling 'create_usd_volumes_for_slippage'
-            # it will remove them from the data fetch and will greatly speed up the alert process
-            # the slippage data for these tokens will not be needed anyway as we will ignore them
-            # this is only done when in alert mode
-            for name in ignore_list:
-                del inv_names[name]
-            
-            print('new value for inv_names', inv_names)
-
-        base_runner.create_usd_volumes_for_slippage(SITE_ID, chain_id, inv_names, liquidation_incentive, kp.get_price, 
+        base_runner.create_usd_volumes_for_slippage(SITE_ID, chain_id, inv_names, liquidation_incentive, kp.get_price,
                                                     False)
-        fix_usd_volume_for_slippage()
-        fix_wstETH_price()
+        # fix_usd_volume_for_slippage()
         if alert_mode:
             d1 = utils.get_file_time(oracle_json_file)
             d1 = min(last_update_time, d1)
-
-            current_supply_borrow = get_supply_borrow()
-            alert_params = get_alert_params()
-            print('alert_params', alert_params)
-            old_alerts = utils.compare_to_prod_and_send_alerts(old_alerts, d1, "agave", "4", SITE_ID, alert_params, send_alerts, ignore_list= ignore_list, current_supply_borrow= current_supply_borrow)
-            print('old_alerts', old_alerts)
-            endDate =  round(datetime.datetime.now().timestamp())
-            utils.record_monitoring_data({
-                "name": 'Agave',
-                "status": "success",
-                "lastEnd": endDate,
-                "lastDuration": endDate - startDate,
-            })
+            old_alerts = utils.compare_to_prod_and_send_alerts(old_alerts, d1, "agave", "4", SITE_ID,
+                                                               private_config.agave_channel, 10, send_alerts)
             print("Alert Mode.Sleeping For 30 Minutes")
             time.sleep(30 * 60)
         else:
             base_runner.create_assets_std_ratio_information(SITE_ID,
-                                                            ['DAI', 'USDC', 'LINK', 'GNO', 'BTC', 'ETH', 'FOX', 'EUR', 'wstETH'],
+                                                            ['DAI', 'USDC', 'LINK', 'GNO', 'BTC', 'ETH', 'FOX'],
                                                             [("04", "2022"), ("05", "2022"), ("06", "2022")])
             create_simulation_config(SITE_ID, c, ETH_PRICE, assets_to_simulate, assets_aliases, liquidation_incentive,
-                                    inv_names)
+                                     inv_names)
             base_runner.create_simulation_results(SITE_ID, ETH_PRICE, total_jobs, collateral_factors, inv_names,
-                                                print_time_series, fast_mode)
+                                                  print_time_series, fast_mode)
             base_runner.create_risk_params(SITE_ID, ETH_PRICE, total_jobs, l_factors, print_time_series)
             base_runner.create_current_simulation_risk(SITE_ID, ETH_PRICE, users_data, assets_to_simulate,
-                                                    assets_aliases,
-                                                    collateral_factors, inv_names, liquidation_incentive, total_jobs,
-                                                    False)
+                                                       assets_aliases,
+                                                       collateral_factors, inv_names, liquidation_incentive, total_jobs,
+                                                       False)
 
             n = datetime.datetime.now().timestamp()
             d1 = utils.get_file_time(oracle_json_file)

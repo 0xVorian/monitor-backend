@@ -1,6 +1,6 @@
 import datetime
 import glob
-import traceback
+
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
@@ -36,8 +36,8 @@ class stability_report:
                 else:
                     # all_df = all_df.append(df)
                     all_df = pd.concat([all_df, df])
-        all_df["Total Debt (M)"] = round(all_df["collateral"] / 1_000_000, 1)
-        all_df["Stress Factor"] = all_df["collateral_liquidation_factor"]
+        all_df["Debt ceiling (M)"] = round(all_df["collateral"] / 1_000_000, 1)
+        all_df["Monthly liquidation volume factor"] = all_df["collateral_liquidation_factor"]
 
         gg = [('price_recovery_time', 'prc'),
               ('volume_for_slippage_10_percents', 'vfs10p'), ('recovery_halflife_retail', 'rhr'),
@@ -51,19 +51,18 @@ class stability_report:
                 batch_df = batch_df.loc[batch_df[g[0]] == row[g[0]]]
 
             sns.set(font_scale=1.5)
-            hm = self.get_heatmap(batch_df, "Total Debt (M)", "Stress Factor", "max_drop")
+            hm = self.get_heatmap(batch_df, "Debt ceiling (M)", "Monthly liquidation volume factor", "max_drop")
             ax = sns.heatmap(hm, annot=True, linewidths=.5, cmap="PiYG", vmin=0.5, vmax=1)
             file_name = "hm"
             for g in gg:
                 file_name += "^" + g[1] + "^" + str(row[g[0]])
             fig = plt.gcf()
-            fig.set_size_inches(12.5, 10.5)
-            plt.suptitle("Dex Liquidity (M-USD): " + str(row["volume_for_slippage_10_percents"] * self.ETH_PRICE / 1_000_000))
+            fig.set_size_inches(12.5, 8.5)
             plt.savefig(directory + os.path.sep + name.replace("|", "-") + os.path.sep + file_name + ".jpg")
             plt.cla()
             plt.close()
             group_by_df = pd.DataFrame({'max_drop':
-                                            batch_df.groupby(["Total Debt (M)", "Stress Factor"])[
+                                            batch_df.groupby(["Debt ceiling (M)", "Monthly liquidation volume factor"])[
                                                 "max_drop"].max()}).reset_index()
             to_return.append((group_by_df, file_name, name, li))
 
@@ -88,8 +87,7 @@ class stability_report:
                 ax1.set_label('Time')
                 ax1.set_ylabel('Price', color='g')
 
-                gg = [('trade_every', 'te'),
-                    ('price_recovery_time', 'prc'),
+                gg = [('price_recovery_time', 'prc'),
                       ('volume_for_slippage_10_percents', 'vfs10p'), ('recovery_halflife_retail', 'rhr'),
                       ('stability_pool_initial_balance_ratio', 'spibr'), ('share_institutional', 'si'),
                       ('collateral', 'c'),
@@ -193,7 +191,7 @@ class stability_report:
         for index, row in df.iterrows():
             price = (row["ask_price"] + row["bid_price"]) * 0.5
             if last_price != 0:
-                price_change = ((price / last_price) - 1) * float(factor)
+                price_change = ((price / last_price) - 1) * factor
                 adjust_price = last_adjusted_price + last_adjusted_price * price_change
             else:
                 adjust_price = price
@@ -274,334 +272,312 @@ class stability_report:
 
     def run_simulation(self, output_directory, file_name, name, config, print_time_series, liquidation_df, skip,
                        calc_pnl):
+        output_file_name = output_directory + os.path.sep + file_name.replace(os.path.sep,
+                                                                              "_") + "_" + name.replace("|",
+                                                                                                        "-") + "_" + "stability_report.csv"
+        print(file_name, name, output_file_name)
+        if skip and os.path.isfile(output_file_name):
+            print("Skipping")
+            return ""
 
-        try:
-            output_file_name = output_directory + os.path.sep + file_name.replace(os.path.sep,
-                                                                                  "_") + "_" + name.replace("|",
-                                                                                                            "-") + "_" + "stability_report.csv"
-            print(file_name, name, output_file_name)
-            if skip and os.path.isfile(output_file_name):
-                print("Skipping")
-                return ""
+        series_std_ratio = config["series_std_ratio"]
+        trade_every = config["trade_every"]
+        report = []
+        print(file_name)
+        dai_eth = pd.read_csv(file_name)
+        total_days_in_file = len(pd.to_datetime(dai_eth['timestamp_x'] / 1000, unit='ms').dt.normalize().unique())
+        #total_days_in_files_factor = total_days_in_file / 30
+        total_days_in_files_factor = 1
+        print(total_days_in_files_factor, total_days_in_file)
+        dai_eth = self.adjust_series_price(dai_eth, series_std_ratio)
+        x = min(dai_eth["timestamp_x"])
+        dai_eth_array = self.convert_to_array(dai_eth, liquidation_df)
+        if liquidation_df is not None:
+            pd.DataFrame(dai_eth_array).to_csv(output_file_name + ".liquidation_data.csv")
 
-            series_std_ratio = config["series_std_ratio"]
-            trade_every = config["trade_every"]
-            report = []
-            print(file_name)
-            dai_eth = pd.read_csv(file_name)
-            total_days_in_file = len(pd.to_datetime(dai_eth['timestamp_x'] / 1000, unit='ms').dt.normalize().unique())
-            #total_days_in_files_factor = total_days_in_file / 30
-            total_days_in_files_factor = 1
-            print(total_days_in_files_factor, total_days_in_file)
-            dai_eth = self.adjust_series_price(dai_eth, series_std_ratio)
-            x = min(dai_eth["timestamp_x"])
-            dai_eth_array = self.convert_to_array(dai_eth, liquidation_df)
-            if liquidation_df is not None:
-                pd.DataFrame(dai_eth_array).to_csv(output_file_name + ".liquidation_data.csv")
+        file_description = datetime.datetime.fromtimestamp(x / (1000 * 1000))
+        file_description = datetime.date.strftime(file_description, "%d/%m/%Y")
+        file_total_volume = sum(dai_eth[self.liquidation_side])
+        simulation_id = str(uuid.uuid4())
+        simulation_index = 0
+        total_runs = len(config["volume_for_slippage_10_percentss"]) * len(config["l_factors"]) * len(config["price_recovery_times"]) \
+                     * len(config["share_institutionals"]) * len(config["recovery_halflife_retails"]) * len(config["collaterals"]) \
+                     * len(config["liquidation_incentives"]) \
+                     * len(config["stability_pool_initial_balances"])
+        current_run = 0
 
-            file_description = datetime.datetime.fromtimestamp(x / (1000 * 1000))
-            file_description = datetime.date.strftime(file_description, "%d/%m/%Y")
-            file_total_volume = sum(dai_eth[self.liquidation_side])
-            simulation_id = str(uuid.uuid4())
-            simulation_index = 0
-            if "delays_in_minutes" not in config:
-                config["delays_in_minutes"] = [0]
+        for volume_for_slippage_10_percents in config["volume_for_slippage_10_percentss"]:
+            for l_factor in config["l_factors"]:
+                for price_recovery_time in config["price_recovery_times"]:
+                    for share_institutional in config["share_institutionals"]:
+                        for recovery_halflife_retail in config["recovery_halflife_retails"]:
+                            for collateral in config["collaterals"]:
+                                for l_incentive in config["liquidation_incentives"]:
+                                    for s_balance in config["stability_pool_initial_balances"]:
+                                        current_run += 1
+                                        simulation_index += 1
+                                        simulation_name = str(simulation_id) + "_" + str(simulation_index)
+                                        target_volume = 0
 
-            total_runs = len(config["volume_for_slippage_10_percentss"]) * len(config["l_factors"]) * len(config["price_recovery_times"]) \
-                         * len(config["share_institutionals"]) * len(config["recovery_halflife_retails"]) * len(config["collaterals"]) \
-                         * len(config["liquidation_incentives"]) \
-                         * len(config["stability_pool_initial_balances"]) * len(config["delays_in_minutes"])
-            current_run = 0
+                                        if liquidation_df is not None:
+                                            liquidation_ratio = 1
+                                            stability_pool_initial_balance = s_balance * config["current_debt"]
+                                        else:
+                                            target_volume = collateral * l_factor * total_days_in_files_factor
+                                            stability_pool_initial_balance = collateral * s_balance
+                                            
+                                            liquidation_ratio = 1
+                                            if file_total_volume != 0:
+                                                liquidation_ratio = target_volume / file_total_volume
 
-            for volume_for_slippage_10_percents in config["volume_for_slippage_10_percentss"]:
-                for l_factor in config["l_factors"]:
-                    for price_recovery_time in config["price_recovery_times"]:
-                        for share_institutional in config["share_institutionals"]:
-                            for recovery_halflife_retail in config["recovery_halflife_retails"]:
-                                for collateral in config["collaterals"]:
-                                    for l_incentive in config["liquidation_incentives"]:
-                                        for s_balance in config["stability_pool_initial_balances"]:
-                                            for delay_in_minutes in config["delays_in_minutes"]:
+                                        cycle_trade_volume = volume_for_slippage_10_percents
+                                        #self.get_volume_for_slippage(volume_for_slippage_10_percents * self.liquidation_factor, 1 - 0.1,1 - l_incentive)
 
-                                                current_run += 1
-                                                simulation_index += 1
-                                                simulation_name = str(simulation_id) + "_" + str(simulation_index)
-                                                target_volume = 0
+                                        stability_pool_simple_instance = stability_pool_simple.stability_pool(
+                                            initial_balance=stability_pool_initial_balance,
+                                            recovery_interval=trade_every, recovery_volume=cycle_trade_volume,
+                                            share_institutional=share_institutional,
+                                            recovery_halflife_retail=recovery_halflife_retail)
 
-                                                if liquidation_df is not None:
-                                                    liquidation_ratio = 1
-                                                    stability_pool_initial_balance = s_balance * config["current_debt"]
-                                                else:
-                                                    target_volume = collateral * l_factor * total_days_in_files_factor
-                                                    stability_pool_initial_balance = collateral * s_balance
-                                                    liquidation_ratio = target_volume / file_total_volume
+                                        ts_report = []
+                                        price_liquidation_factor = 1
+                                        historical_cycle_trade_volume = []
+                                        closed_liquidations = []
+                                        open_liquidations = []
+                                        prev_max_drop = 0
+                                        max_drop = 0
+                                        max_drop_open_volume = 0
+                                        simulation_pnl = 0
+                                        price_at_max_drop = 0
+                                        max_liquidation_volume = 0
+                                        min_price_liquidation_factor = float('inf')
+                                        min_multiply_price_liquidation_factor = float('inf')
+                                        all_liquidations_volume = 0
+                                        max_daily_volume = 0
+                                        last_row_date = 0
+                                        daily_volume = 0
+                                        collateral_factor = config["collateral_factor"]
+                                        for row in dai_eth_array:
+                                            time = row["timestamp_x"]
+                                            row_liquidation = row[self.liquidation_side]
+                                            liquidation_volume = (
+                                                                         row_liquidation * liquidation_ratio) / self.liquidation_factor
+                                            max_liquidation_volume = max(liquidation_volume, max_liquidation_volume)
 
-                                                cycle_trade_volume = float(volume_for_slippage_10_percents)
-                                                #self.get_volume_for_slippage(volume_for_slippage_10_percents * self.liquidation_factor, 1 - 0.1,1 - l_incentive)
-
-                                                stability_pool_simple_instance = stability_pool_simple.stability_pool(
-                                                    initial_balance=stability_pool_initial_balance,
-                                                    recovery_interval=trade_every, recovery_volume=cycle_trade_volume,
-                                                    share_institutional=share_institutional,
-                                                    recovery_halflife_retail=recovery_halflife_retail)
-
-                                                ts_report = []
-                                                price_liquidation_factor = 1
-                                                historical_cycle_trade_volume = []
-                                                closed_liquidations = []
-                                                open_liquidations = []
-                                                prev_max_drop = 0
-                                                max_drop = 0
-                                                max_drop_open_volume = 0
-                                                simulation_pnl = 0
-                                                price_at_max_drop = 0
-                                                max_liquidation_volume = 0
-                                                min_price_liquidation_factor = float('inf')
-                                                min_multiply_price_liquidation_factor = float('inf')
-                                                all_liquidations_volume = 0
-                                                max_daily_volume = 0
-                                                last_row_date = 0
+                                            row_date = datetime.datetime.fromtimestamp(time / (1000 * 1000))
+                                            row_date = datetime.date.strftime(row_date, "%d/%m/%Y")
+                                            if row_date != last_row_date:
+                                                last_row_date = row_date
+                                                if max_daily_volume < daily_volume:
+                                                    max_daily_volume = daily_volume
                                                 daily_volume = 0
-                                                collateral_factor = config["collateral_factor"]
-                                                volume_for_slippage_10_percents_price_drop = volume_for_slippage_10_percents
-                                                if "volume_for_slippage_10_percents_price_drop" in config:
-                                                    oldVolume = volume_for_slippage_10_percents_price_drop
-                                                    volume_for_slippage_10_percents_price_drop = config["volume_for_slippage_10_percents_price_drop"]
-                                                    if oldVolume != volume_for_slippage_10_percents_price_drop:
-                                                        print('VOLUME CHANGED: old:', oldVolume, 'new:', volume_for_slippage_10_percents_price_drop)
-                                                for row in dai_eth_array:
-                                                    time = row["timestamp_x"]
-                                                    row_liquidation = row[self.liquidation_side]
-                                                    liquidation_volume = (
-                                                                                 row_liquidation * liquidation_ratio) / self.liquidation_factor
-                                                    max_liquidation_volume = max(liquidation_volume, max_liquidation_volume)
 
-                                                    row_date = datetime.datetime.fromtimestamp(time / (1000 * 1000))
-                                                    row_date = datetime.date.strftime(row_date, "%d/%m/%Y")
-                                                    if row_date != last_row_date:
-                                                        last_row_date = row_date
-                                                        if max_daily_volume < daily_volume:
-                                                            max_daily_volume = daily_volume
-                                                        daily_volume = 0
+                                            daily_volume += liquidation_volume
 
-                                                    daily_volume += liquidation_volume
+                                            if row_liquidation > 0 and liquidation_volume == 0:
+                                                print("row_liquidation", row_liquidation, liquidation_volume,
+                                                      liquidation_ratio, target_volume / file_total_volume, "EXIT1")
+                                                exit()
 
-                                                    if row_liquidation > 0 and liquidation_volume == 0:
-                                                        print("row_liquidation", row_liquidation,
-                                                              "liquidation_volume", liquidation_volume,
-                                                              'liquidation_ratio',liquidation_ratio,
-                                                              "file_total_volume", file_total_volume,
-                                                              "target_volume",target_volume , "EXIT1")
-                                                        exit()
+                                            all_liquidations_volume += liquidation_volume
 
-                                                    all_liquidations_volume += liquidation_volume
+                                            # recover price_liquidation_factor
+                                            missing_price_liquidation_factor = 1 - price_liquidation_factor
+                                            if price_recovery_time == 0:
+                                                price_liquidation_factor = 1
+                                                min_price_liquidation_factor = 1
+                                            else:
+                                                next_missing_price_liquidation_factor = missing_price_liquidation_factor * pow(
+                                                    0.5, 1 / (price_recovery_time * 24 * 60))
+                                                price_liquidation_factor_recovery = missing_price_liquidation_factor - next_missing_price_liquidation_factor
+                                                if price_liquidation_factor_recovery < 0:
+                                                    print("price_liquidation_factor_recovery",
+                                                          price_liquidation_factor_recovery, "EXIT2")
+                                                    exit()
 
-                                                    # recover price_liquidation_factor
-                                                    missing_price_liquidation_factor = 1 - price_liquidation_factor
-                                                    if price_recovery_time == 0:
-                                                        price_liquidation_factor = 1
-                                                        min_price_liquidation_factor = 1
+                                                price_liquidation_factor += price_liquidation_factor_recovery
+                                                min_price_liquidation_factor = min(price_liquidation_factor,
+                                                                                   price_liquidation_factor)
+
+                                                if price_liquidation_factor > 1:
+                                                    print("Error", "EXIT3")
+                                                    exit()
+
+                                            price = row["adjust_price"] * price_liquidation_factor
+
+                                            if liquidation_volume != 0:
+                                                liq = {"time": time, "liquidation_volume": liquidation_volume,
+                                                       "worst_price": price,
+                                                       "pnl": 0,
+                                                       "price": price,
+                                                       "closed": 0,
+                                                       "trades": []}
+                                                open_liquidations.append(liq)
+
+                                            for liquidation in open_liquidations:
+                                                if liquidation["worst_price"] > price:
+                                                    liquidation["worst_price"] = price
+
+                                            open_liquidations_volume = sum(
+                                                [open_liquidation["liquidation_volume"] - open_liquidation["closed"] for
+                                                 open_liquidation in
+                                                 open_liquidations])
+
+                                            drop, volume = self.check_max_liquidation_drop(open_liquidations, price)
+                                            if max_drop < drop:
+                                                max_drop = drop
+                                                price_at_max_drop = price
+                                                max_drop_open_volume = open_liquidations_volume
+
+                                            if prev_max_drop < 0.25 and max_drop > 0.25:
+                                                x = 1
+
+
+                                            market_volume = cycle_trade_volume - sum(historical_cycle_trade_volume)
+                                            close_liquidation_volume = 0
+                                            trade_volume = 0
+                                            using_stability_pool_volume = 0
+                                            stability_pool_simple_recovery = 0
+                                            using_market_volume = 0
+                                            stability_pool_available_volume = 0
+
+                                            if stability_pool_initial_balance != 0:
+                                                stability_pool_simple_recovery = stability_pool_simple_instance.do_tick(
+                                                    time,
+                                                    market_volume)
+                                                stability_pool_available_volume = stability_pool_simple_instance.do_check_liquidation_size()
+                                                using_stability_pool_volume = min(open_liquidations_volume,
+                                                                                  stability_pool_available_volume)
+                                                close_liquidation_volume += using_stability_pool_volume
+                                                trade_volume += stability_pool_simple_recovery
+
+                                            if close_liquidation_volume < open_liquidations_volume:
+                                                using_market_volume = min(
+                                                    open_liquidations_volume - close_liquidation_volume,
+                                                    market_volume - stability_pool_simple_recovery)
+
+                                                close_liquidation_volume += using_market_volume
+
+                                                if open_liquidations_volume > 0 and close_liquidation_volume > 0 \
+                                                        and close_liquidation_volume - open_liquidations_volume < 1:
+                                                    close_liquidation_volume += 1  # for Rounding issues
+                                                trade_volume += using_market_volume
+
+                                                if calc_pnl:
+                                                    simulation_pnl = self.calc_simulation_pnl(open_liquidations,
+                                                                                          closed_liquidations,
+                                                                                          collateral_factor,
+                                                                                          l_incentive, max_drop, prev_max_drop)
+                                            prev_max_drop = max_drop
+
+                                            ts_report.append({
+                                                "ts": time,
+                                                "price": price,
+                                                "liquidation_volume": liquidation_volume,
+                                                "open_liquidations": open_liquidations_volume,
+                                                "market_volume": market_volume,
+                                                "stability_pool_simple_recovery": stability_pool_simple_recovery,
+                                                "stability_pool_available_volume": stability_pool_available_volume,
+                                                "using_market_volume": using_market_volume,
+                                                "close_liquidation_volume": close_liquidation_volume,
+                                                "trade_volume": trade_volume,
+                                                "max_drop": max_drop,
+                                                "pnl": simulation_pnl
+
+                                            })
+
+                                            if close_liquidation_volume > 0:
+                                                to_delete = []
+                                                for open_liquidation in open_liquidations:
+                                                    closed_volume = open_liquidation["closed"]
+                                                    open_volume = open_liquidation["liquidation_volume"] - closed_volume
+
+                                                    if open_volume > close_liquidation_volume:
+                                                        open_liquidation["trades"].append(
+                                                            {"time": time, "volume": close_liquidation_volume,
+                                                             "price": open_liquidation["worst_price"]}
+                                                        )
+                                                        open_liquidation["closed"] += close_liquidation_volume
+                                                        break
                                                     else:
-                                                        next_missing_price_liquidation_factor = missing_price_liquidation_factor * pow(
-                                                            0.5, 1 / (price_recovery_time * 24 * 60))
-                                                        price_liquidation_factor_recovery = missing_price_liquidation_factor - next_missing_price_liquidation_factor
-                                                        if price_liquidation_factor_recovery < 0:
-                                                            print("price_liquidation_factor_recovery",
-                                                                  price_liquidation_factor_recovery, "EXIT2")
-                                                            exit()
+                                                        current_liquidation_volume = open_volume
+                                                        open_liquidation["trades"].append(
+                                                            {"time": time, "volume": current_liquidation_volume,
+                                                             "price": open_liquidation["worst_price"]})
+                                                        open_liquidation["closed"] += current_liquidation_volume
+                                                        close_liquidation_volume -= current_liquidation_volume
+                                                        to_delete.append(open_liquidation)
 
-                                                        price_liquidation_factor += price_liquidation_factor_recovery
-                                                        min_price_liquidation_factor = min(price_liquidation_factor,
-                                                                                           price_liquidation_factor)
+                                                if using_stability_pool_volume > 0:
+                                                    stability_pool_simple_instance.do_set_liquidation_size(
+                                                        using_stability_pool_volume)
 
-                                                        if price_liquidation_factor > 1:
-                                                            print("Error", "EXIT3")
-                                                            exit()
+                                                for o in to_delete:
+                                                    open_liquidations.remove(o)
+                                                    closed_liquidations.append(copy.deepcopy(o))
 
-                                                    price = row["adjust_price"] * price_liquidation_factor
+                                            historical_cycle_trade_volume.append(trade_volume)
+                                            xx = int(len(historical_cycle_trade_volume) - trade_every / 60)
+                                            if xx > 0:
+                                                historical_cycle_trade_volume = historical_cycle_trade_volume[xx:]
 
-                                                    if liquidation_volume != 0:
-                                                        liq = {"time": time,
-                                                               "liquidation_volume": liquidation_volume,
-                                                               "worst_price": price,
-                                                               "pnl": 0,
-                                                               "price": price,
-                                                               "closed": 0,
-                                                               "trades": []}
-                                                        open_liquidations.append(liq)
+                                            # multiply the price by the trade slippage
+                                            if l_incentive > 0:
+                                                multiply_price_liquidation_factor = self.get_slippage_for_volume(
+                                                    cycle_trade_volume, 1 - l_incentive, trade_volume)
+                                            else:
+                                                multiply_price_liquidation_factor = 1
 
-                                                    for liquidation in open_liquidations:
-                                                        if liquidation["worst_price"] > price:
-                                                            liquidation["worst_price"] = price
+                                            min_multiply_price_liquidation_factor = min(
+                                                min_multiply_price_liquidation_factor,
+                                                multiply_price_liquidation_factor)
 
-                                                    open_liquidations_volume = sum(
-                                                        [open_liquidation["liquidation_volume"] - open_liquidation["closed"] for
-                                                         open_liquidation in
-                                                         open_liquidations])
+                                            price_liquidation_factor *= multiply_price_liquidation_factor
 
-                                                    drop, volume = self.check_max_liquidation_drop(open_liquidations, price)
-                                                    if max_drop < drop:
-                                                        max_drop = drop
-                                                        price_at_max_drop = price
-                                                        max_drop_open_volume = open_liquidations_volume
+                                        open_volume = sum(
+                                            [open_liquidation["liquidation_volume"] - open_liquidation["closed"] for
+                                             open_liquidation in
+                                             open_liquidations])
 
-                                                    market_volume = cycle_trade_volume - sum(historical_cycle_trade_volume)
-                                                    close_liquidation_volume = 0
-                                                    temp_trade_volume = 0
-                                                    using_stability_pool_volume = 0
-                                                    stability_pool_simple_recovery = 0
-                                                    using_market_volume = 0
-                                                    stability_pool_available_volume = 0
+                                        print(os.path.basename(file_name), name, "total runs", total_runs, "run", current_run,
+                                              "max_drop", round(max_drop, 2),
+                                              "simulation_pnl", round(simulation_pnl, 2))
 
-                                                    if stability_pool_initial_balance != 0:
-                                                        stability_pool_simple_recovery = stability_pool_simple_instance.do_tick(
-                                                            time,
-                                                            market_volume)
-                                                        stability_pool_available_volume = stability_pool_simple_instance.do_check_liquidation_size()
-                                                        using_stability_pool_volume = min(open_liquidations_volume,
-                                                                                          stability_pool_available_volume)
-                                                        close_liquidation_volume += using_stability_pool_volume
-                                                        temp_trade_volume += stability_pool_simple_recovery
+                                        if print_time_series:
+                                            df = pd.DataFrame(ts_report)
+                                            print(len(df))
+                                            df.to_csv(output_directory + os.path.sep + simulation_name + '.csv')
 
-                                                    if close_liquidation_volume < open_liquidations_volume:
-                                                        using_market_volume = min(
-                                                            open_liquidations_volume - close_liquidation_volume,
-                                                            market_volume - stability_pool_simple_recovery)
+                                        report.append(
+                                            {"simulation_name": simulation_name,
+                                             "file_name": file_description,
+                                             "file_total_volume": file_total_volume,
+                                             "trade_every": trade_every,
+                                             "series_std_ratio": series_std_ratio,
+                                             "liquidation_incentive": l_incentive,
+                                             "price_recovery_time": price_recovery_time,
+                                             "volume_for_slippage_10_percents": volume_for_slippage_10_percents,
+                                             "cycle_trade_volume": cycle_trade_volume,
+                                             "collateral": collateral * self.ETH_PRICE,
+                                             "recovery_halflife_retail": recovery_halflife_retail,
+                                             "share_institutional": share_institutional,
+                                             "stability_pool_initial_balance_ratio": s_balance,
+                                             "stability_pool_initial_balance": stability_pool_initial_balance,
+                                             "collateral_liquidation_factor": l_factor,
+                                             "target_volume": target_volume,
+                                             "simulation volume": all_liquidations_volume,
+                                             "min_multiply_price_liquidation_factor": min_multiply_price_liquidation_factor,
+                                             "max_liquidation_volume": max_liquidation_volume,
+                                             "min_price_liquidation_factor": min_price_liquidation_factor,
+                                             "max_simulation_daily_volume": max_daily_volume,
+                                             "max_drop": max_drop,
+                                             "price_at_max_drop": price_at_max_drop,
+                                             "max_drop_volume": max_drop_open_volume,
+                                             "pnl": simulation_pnl,
+                                             "open_volume": open_volume})
 
-                                                        close_liquidation_volume += using_market_volume
-                                                        temp_trade_volume += using_market_volume
+                                df = pd.DataFrame(report)
+                                df.to_csv(output_file_name)
 
-                                                        if open_liquidations_volume > 0 and close_liquidation_volume > 0 \
-                                                                and close_liquidation_volume - open_liquidations_volume < 1:
-                                                            close_liquidation_volume += 1  # for Rounding issues
-                                                            #temp_trade_volume += 1
-
-
-                                                        if calc_pnl:
-                                                            simulation_pnl = self.calc_simulation_pnl(open_liquidations,
-                                                                                                  closed_liquidations,
-                                                                                                  collateral_factor,
-                                                                                                  l_incentive, max_drop, prev_max_drop)
-                                                    prev_max_drop = max_drop
-
-                                                    # if close_liquidation_volume != temp_trade_volume:
-                                                    #     print("BBBBBBBBBBBBBB", close_liquidation_volume, temp_trade_volume)
-                                                    #     exit()
-                                                    trade_volume = 0
-                                                    if close_liquidation_volume > 0:
-                                                        to_delete = []
-                                                        for open_liquidation in open_liquidations:
-                                                            start_liquidation_time = open_liquidation["time"] + delay_in_minutes * 60 * 1_000_000
-                                                            if delay_in_minutes > 0 and time < start_liquidation_time:
-                                                                continue
-                                                            closed_volume = open_liquidation["closed"]
-                                                            open_volume = open_liquidation["liquidation_volume"] - closed_volume
-
-                                                            if open_volume > close_liquidation_volume:
-                                                                open_liquidation["trades"].append(
-                                                                    {"time": time, "volume": close_liquidation_volume,
-                                                                     "price": open_liquidation["worst_price"]}
-                                                                )
-                                                                trade_volume += close_liquidation_volume
-                                                                open_liquidation["closed"] += close_liquidation_volume
-                                                                break
-                                                            else:
-                                                                current_liquidation_volume = open_volume
-                                                                open_liquidation["trades"].append(
-                                                                    {"time": time, "volume": current_liquidation_volume,
-                                                                     "price": open_liquidation["worst_price"]})
-                                                                open_liquidation["closed"] += current_liquidation_volume
-                                                                trade_volume += current_liquidation_volume
-                                                                close_liquidation_volume -= current_liquidation_volume
-                                                                to_delete.append(open_liquidation)
-
-                                                        for o in to_delete:
-                                                            open_liquidations.remove(o)
-                                                            closed_liquidations.append(copy.deepcopy(o))
-
-                                                        # print("AAAAAAA", trade_volume, temp_trade_volume, trade_volume - temp_trade_volume)
-
-                                                        if using_stability_pool_volume > 0 and trade_volume > 0:
-                                                            stability_pool_simple_instance.do_set_liquidation_size(
-                                                                min(using_stability_pool_volume, trade_volume))
-
-                                                    ts_report.append({
-                                                        "ts": time,
-                                                        "price": price,
-                                                        "liquidation_volume": liquidation_volume,
-                                                        "open_liquidations": open_liquidations_volume,
-                                                        "market_volume": market_volume,
-                                                        "stability_pool_simple_recovery": stability_pool_simple_recovery,
-                                                        "stability_pool_available_volume": stability_pool_available_volume,
-                                                        "using_market_volume": using_market_volume,
-                                                        "close_liquidation_volume": close_liquidation_volume,
-                                                        "trade_volume": trade_volume,
-                                                        "max_drop": max_drop,
-                                                        "pnl": simulation_pnl
-                                                    })
-
-                                                    historical_cycle_trade_volume.append(trade_volume)
-                                                    xx = int(len(historical_cycle_trade_volume) - trade_every / 60)
-                                                    if xx > 0:
-                                                        historical_cycle_trade_volume = historical_cycle_trade_volume[xx:]
-
-                                                    # multiply the price by the trade slippage
-                                                    if l_incentive > 0 and trade_volume > 0:
-                                                        multiply_price_liquidation_factor = self.get_slippage_for_volume(
-                                                            volume_for_slippage_10_percents_price_drop, 1 - l_incentive, trade_volume)
-                                                    else:
-                                                        multiply_price_liquidation_factor = 1
-
-                                                    min_multiply_price_liquidation_factor = min(
-                                                        min_multiply_price_liquidation_factor,
-                                                        multiply_price_liquidation_factor)
-
-                                                    price_liquidation_factor *= multiply_price_liquidation_factor
-
-                                                open_volume = sum(
-                                                    [open_liquidation["liquidation_volume"] - open_liquidation["closed"] for
-                                                     open_liquidation in
-                                                     open_liquidations])
-
-                                                print(os.path.basename(file_name), name, "total runs", total_runs, "run", current_run,
-                                                      "max_drop", round(max_drop, 2),
-                                                      "simulation_pnl", round(simulation_pnl, 2))
-
-                                                if print_time_series:
-                                                    df = pd.DataFrame(ts_report)
-                                                    df.to_csv(output_directory + os.path.sep + simulation_name + '.csv')
-
-                                                report.append(
-                                                    {"simulation_name": simulation_name,
-                                                     "file_name": file_description,
-                                                     "file_total_volume": file_total_volume,
-                                                     "trade_every": trade_every,
-                                                     "series_std_ratio": series_std_ratio,
-                                                     "liquidation_incentive": l_incentive,
-                                                     "price_recovery_time": price_recovery_time,
-                                                     "volume_for_slippage_10_percents": volume_for_slippage_10_percents,
-                                                     "delay_in_minutes": delay_in_minutes,
-                                                     "cycle_trade_volume": cycle_trade_volume,
-                                                     "collateral": collateral * self.ETH_PRICE,
-                                                     "recovery_halflife_retail": recovery_halflife_retail,
-                                                     "share_institutional": share_institutional,
-                                                     "stability_pool_initial_balance_ratio": s_balance,
-                                                     "stability_pool_initial_balance": stability_pool_initial_balance,
-                                                     "collateral_liquidation_factor": l_factor,
-                                                     "target_volume": target_volume,
-                                                     "simulation volume": all_liquidations_volume,
-                                                     "min_multiply_price_liquidation_factor": min_multiply_price_liquidation_factor,
-                                                     "max_liquidation_volume": max_liquidation_volume,
-                                                     "min_price_liquidation_factor": min_price_liquidation_factor,
-                                                     "max_simulation_daily_volume": max_daily_volume,
-                                                     "max_drop": max_drop,
-                                                     "price_at_max_drop": price_at_max_drop,
-                                                     "max_drop_volume": max_drop_open_volume,
-                                                     "pnl": simulation_pnl,
-                                                     "open_volume": open_volume})
-            df = pd.DataFrame(report)
-            df.to_csv(output_file_name)
-        except Exception as e:
-            print("Exception !!!!!!!!!!!!!!!", str(e))
-            traceback.print_exc()
-
+                            df = pd.DataFrame(report)
+                            df.to_csv(output_file_name)

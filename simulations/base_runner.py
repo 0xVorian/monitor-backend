@@ -12,7 +12,6 @@ import utils
 from joblib import Parallel, delayed
 import shutil
 import stability_report
-import stability_report_badger
 import glob
 import sliipage_utils
 import traceback
@@ -80,50 +79,29 @@ def create_oracle_information(SITE_ID, prices, chain_id, names, assets_cex_alias
     cp = cex_prices.CCXTClient()
     data = {"json_time": time.time()}
     asset_name_ignore_list = ["auSTNEAR"]
-    cex_ignore_list = ["DPX", "GMX", "OHM", "GLP", "wstETH"]
-    if chain_id == "cardano": 
-        # ignored tokens for MELD protocol on cardano
-        cex_ignore_list =  ["iUSD", "MIN", "COPI", "C3", "iBTC"]
-
+    cex_ignore_list = ["DPX", "GMX", "OHM", "GLP"]
     dex_ignore_list = ["sGLP"]
     for asset_id in prices:
         asset_name = names[asset_id]
         cex_name = assets_cex_aliases[asset_name]
         cex_price = 1
-        if chain_id == "cardano":
-            exchange = 'binance' # default to binance
-            if cex_name in ["MELD", "HOSKY", "WRT"]:
-                exchange = "mexc"
-            elif cex_name in ["WMT"]:
-                exchange = "huobi"
-
-            cex_price = cp.get_price(exchange, cex_name, "USDT") if (cex_name not in cex_ignore_list and asset_name not in asset_name_ignore_list) else 'NaN'
-        else:
-            if cex_name != "USDC" and cex_name != "USDT" and cex_name != "DAI" and cex_name != "VST":
-                exchange = "binance" if cex_name != "FOX" else "coinbasepro"
-                cex_price = cp.get_price(exchange, cex_name, "USDT") if (cex_name not in cex_ignore_list and asset_name not in asset_name_ignore_list) else 'NaN'
+        if cex_name != "USDC" and cex_name != "USDT" and cex_name != "DAI" and cex_name != "VST":
+            cex_price = cp.get_price("binance", cex_name, "USDT") if (cex_name not in cex_ignore_list and asset_name not in asset_name_ignore_list) else 'NaN'
 
         dex_price = 1
-        if chain_id == "cardano":
-            # do not fetch dex price for cardano using this function
-            dex_price = 'NaN'
-        else:
-            if chain_id == "aurora":
-                if asset_name != "auUSDC":
-                    dex_price = dex_get_price_function("auUSDC", asset_name, 1000) if asset_name not in dex_ignore_list else 'NaN'
-            elif chain_id == "arbitrum":
-                if asset_name != "VST":
-                    dex_price = dex_get_price_function("VST", asset_name, 1000) if asset_name not in dex_ignore_list else 'NaN'
-            elif chain_id == "yokaiswap" or chain_id == "og":
-                if asset_name != "USDC":
-                    dex_price = dex_get_price_function("USDC", asset_name, 1000) if asset_name not in dex_ignore_list else 'NaN'
-        
-        print('dex price:', asset_name, dex_price)
+        if chain_id == "aurora":
+            if asset_name != "auUSDC":
+                dex_price = dex_get_price_function("auUSDC", asset_name, 1000) if asset_name not in dex_ignore_list else 'NaN'
+        elif chain_id == "arbitrum":
+            if asset_name != "VST":
+                dex_price = dex_get_price_function("VST", asset_name, 1000) if asset_name not in dex_ignore_list else 'NaN'
+        elif chain_id == "yokaiswap":
+            if asset_name != "USDC":
+                dex_price = dex_get_price_function("USDC", asset_name, 1000) if asset_name not in dex_ignore_list else 'NaN'
 
         data[asset_name] = {"oracle": prices[asset_id], "cex_price": cex_price, "dex_price": dex_price}
 
     fp = open("webserver" + os.path.sep + SITE_ID + os.path.sep + "oracles.json", "w")
-    print(data)
     json.dump(data, fp)
     fp.close()
 
@@ -200,7 +178,6 @@ def create_usd_volumes_for_slippage(SITE_ID, chain_id, inv_names, liquidation_in
         json.dump(data, fp)
         fp.close()
     except Exception as e:
-        traceback.print_exc()
         print(e)
 
 
@@ -325,16 +302,11 @@ def create_simulation_results(SITE_ID, ETH_PRICE, total_jobs, collateral_factors
 
     file = open("webserver" + os.path.sep + SITE_ID + os.path.sep + "simulation_configs.json", "r")
     jj = json.load(file)
-    try:
-        Parallel(n_jobs=total_jobs)(
-            delayed(run_simulation_on_dir)(ETH_PRICE, ("data_worst_day" if fast_mode else "data_worst") + os.path.sep + "*ETH*", output_folder,
-                                           collateral_factors, inv_names, j, jj[j], print_time_series,
-                                           None, False, False)
-            for j in jj if j != "json_time")
-
-    except Exception as e:
-        print("Exception !!!!!!!!!!!!!!!", str(e))
-        traceback.print_exc()
+    Parallel(n_jobs=total_jobs)(
+        delayed(run_simulation_on_dir)(ETH_PRICE, ("data_worst_day" if fast_mode else "data_worst") + os.path.sep + "*ETH*", output_folder,
+                                       collateral_factors, inv_names, j, jj[j], print_time_series,
+                                       None, False, False)
+        for j in jj if j != "json_time")
 
 
 def run_simulation_on_dir(ETH_PRICE, source_data, output_folder, collateral_factors, inv_names, name, config,
@@ -346,15 +318,9 @@ def run_simulation_on_dir(ETH_PRICE, source_data, output_folder, collateral_fact
         try:
             n = name.split('-')[0] if len(name.split('-')) == 2 else name.split('-')[0] + "-" + name.split('-')[1]
             config["collateral_factor"] = collateral_factors[inv_names[n]]
-            if not "badger" in output_folder:
-                sr = stability_report.stability_report()
-                sr.ETH_PRICE = ETH_PRICE
-                sr.run_simulation(output_folder, file, name, config, print_time_series, liquidation_df, skip, calc_pnl)
-            else:
-                sr = stability_report_badger.stability_report()
-                sr.ETH_PRICE = ETH_PRICE
-                sr.run_simulation(output_folder, file, name, config, print_time_series, liquidation_df, skip, calc_pnl)
-
+            sr = stability_report.stability_report()
+            sr.ETH_PRICE = ETH_PRICE
+            sr.run_simulation(output_folder, file, name, config, print_time_series, liquidation_df, skip, calc_pnl)
         except Exception as e:
             print("Exception !!!!!!!!!!!!!!!", str(e))
             traceback.print_exc()
@@ -386,8 +352,8 @@ def create_risk_params(SITE_ID, ETH_PRICE, total_jobs, l_factors, print_time_ser
 
                 for index, row in df.iterrows():
                     data[j][simulation_name].append(
-                        {'dc': round(row['Total Debt (M)'], 2),
-                         'lf': row['Stress Factor'],
+                        {'dc': round(row['Debt ceiling (M)'], 2),
+                         'lf': row['Monthly liquidation volume factor'],
                          'md': round(row["max_drop"], 3),
                          "li": li})
 
@@ -479,7 +445,8 @@ def create_current_simulation_risk(SITE_ID, ETH_PRICE, users_data, assets_to_sim
             data[base] = {}
             for quote in jj1[base]:
                 files = glob.glob(
-                    "current_risk_results" + os.path.sep + SITE_ID + os.path.sep + "*csv*" + base + "*" + quote + "*")
+                    "current_risk_results" + os.path.sep + SITE_ID + os.path.sep + "*csv*_" + base + "*" + quote + "_stability_report.csv")
+                print('files found for base ', base, 'and quote', quote, ': ', files)
                 if len(files) == 0:
                     print("skip", base, quote)
                     continue

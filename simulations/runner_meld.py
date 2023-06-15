@@ -161,7 +161,11 @@ def create_simulation_config(SITE_ID, c, ETH_PRICE, assets_to_simulate, assets_a
                 elif quote_to_simulation in ["ADA", "iUSD", "iBTC"]:
                     new_c["volume_for_slippage_10_percents_price_drop"] = jj1[base_to_simulation]["ADA"]["volume"] / ETH_PRICE
 
-                new_c["collaterals"] = [100_000 / ETH_PRICE, 250_000 / ETH_PRICE, 500_000 / ETH_PRICE,
+                new_c["collaterals"] = [5_0000 / ETH_PRICE, 10_000 / ETH_PRICE, 20_000 / ETH_PRICE,
+                                        30_000 / ETH_PRICE, 40_000 / ETH_PRICE,
+                                        50_000 / ETH_PRICE, 60_000 / ETH_PRICE, 70_000 / ETH_PRICE,
+                                        80_000 / ETH_PRICE, 90_000 / ETH_PRICE,
+                                        100_000 / ETH_PRICE, 250_000 / ETH_PRICE, 500_000 / ETH_PRICE,
                                         750_000 / ETH_PRICE, 1_000_000 / ETH_PRICE, 5_000_000 / ETH_PRICE,
                                         10_000_000 / ETH_PRICE, 15_000_000 / ETH_PRICE, 20_000_000 / ETH_PRICE]
 
@@ -183,16 +187,13 @@ def create_simulation_config(SITE_ID, c, ETH_PRICE, assets_to_simulate, assets_a
     json.dump(data, fp)
 
 
-def fix_lending_platform_current_information(protocolFees, magicNumber, liquidationDelay, liquidationIncentive, ltv, assetAdditionalRiskParams):
+def fix_lending_platform_current_information(protocolFees, magicNumber, liquidationDelay, liquidationIncentive):
     file = open("webserver" + os.sep + SITE_ID + os.sep + "lending_platform_current.json")
     data = json.load(file)
     data["protocolFees"] = float(protocolFees)
     data["magicNumber"] = float(magicNumber)
     data["liquidationDelay"] = liquidationDelay
     data["liquidationIncentive"] = float(liquidationIncentive)
-    data["ltv"] = ltv
-    data["assetAdditionalRiskParams"] = assetAdditionalRiskParams
-
     file.close()
     fp = open("webserver" + os.path.sep + SITE_ID + os.path.sep + "lending_platform_current.json", "w")
     json.dump(data, fp)
@@ -230,7 +231,7 @@ if __name__ == '__main__':
     SITE_ID = "5"
     SITE_ID = utils.get_site_id(SITE_ID)
 
-    assets_to_simulate = ["ADA", "WRT", "MIN", "MELD", "iUSD", "iBTC", "HOSKY", "COPI", "C3", "WMT"]
+    assets_to_simulate = ["ADA", "WRT", "MIN", "MELD", "iUSD", "INDY", "HOSKY", "COPI", "C3", "WMT"]
     ETH_PRICE = 1600
     total_jobs = 5
     assets_aliases = {}
@@ -241,10 +242,6 @@ if __name__ == '__main__':
     # get slippage data from meld directory
     shutil.copyfile(".." + os.path.sep + "meld" + os.path.sep + "liquidity" + os.path.sep + "usd_volume_for_slippage.json",
                      "webserver" + os.path.sep + SITE_ID + os.path.sep + 'usd_volume_for_slippage.json')
-    
-    # get the last day volume from meld directory
-    shutil.copyfile(".." + os.path.sep + "meld" + os.path.sep + "history-src" + os.path.sep + "last_day_volume.json",
-                     "webserver" + os.path.sep + SITE_ID + os.path.sep + 'last_day_volume.json')
 
     lending_platform_json_file = ".." + os.path.sep + "meld" + os.path.sep + "user-data" + os.path.sep + "data.json"
     file = open(lending_platform_json_file)
@@ -254,12 +251,12 @@ if __name__ == '__main__':
     protocol_fees = data['protocolFees']
     magic_number = private_config.meld_magic_number
 
-    # substract magic number for each liquidation incentives
+    # substract protocol fees for each liquidation incentives
     source_liquidation_incentive = 0
     for a in data["liquidationIncentive"]:
         source_liquidation_incentive = data["liquidationIncentive"][a]
         data["liquidationIncentive"][a] = float(data["liquidationIncentive"][a]) - magic_number
-        print('liquidation incentives change from', source_liquidation_incentive, 'to', data["liquidationIncentive"][a], 'for asset', a, 'using magic_number:', magic_number)
+        print('liquidation incentives change from', source_liquidation_incentive, 'to', data["liquidationIncentive"][a], 'for asset', a, 'using protocol fees:', protocol_fees)
 
     cp_parser = compound_parser.CompoundParser()
     users_data, assets_liquidation_data, \
@@ -288,13 +285,8 @@ if __name__ == '__main__':
     base_runner.create_lending_platform_current_information(SITE_ID, last_update_time, names, inv_names, decimals,
                                                                 prices, collateral_factors, collateral_caps, borrow_caps,
                                                                 underlying)
-    ltv = {}
-    assetAdditionalRiskParams = {}
-    for name in names:
-        ltv[names[name]] = float(data['ltv'][name])
-        assetAdditionalRiskParams[names[name]] = data['additionalRiskParams'][name]
     
-    fix_lending_platform_current_information(protocol_fees, magic_number, c["delays_in_minutes"], source_liquidation_incentive, ltv, assetAdditionalRiskParams)
+    fix_lending_platform_current_information(protocol_fees, magic_number, c["delays_in_minutes"], source_liquidation_incentive)
     base_runner.create_account_information(SITE_ID, users_data, totalAssetCollateral, totalAssetBorrow, inv_names, assets_liquidation_data, False)
     
     base_runner.create_oracle_information(SITE_ID, prices, chain_id, names, assets_aliases, None)
@@ -314,5 +306,5 @@ if __name__ == '__main__':
     
     base_runner.create_current_simulation_risk(SITE_ID, ETH_PRICE, users_data, assets_to_simulate, assets_aliases, collateral_factors, inv_names, liquidation_incentive, total_jobs, False)
     
-    utils.publish_results(SITE_ID, '5/staging-2023-03-13')
+    utils.publish_results(SITE_ID, '5/staging')
 

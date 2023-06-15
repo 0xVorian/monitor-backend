@@ -1,4 +1,3 @@
-import datetime
 import json
 import time
 import os
@@ -9,7 +8,6 @@ import compound_parser
 import base_runner
 import copy
 import kyber_prices
-import private_config
 import utils
 import sys
 
@@ -91,18 +89,6 @@ def create_simulation_config(SITE_ID, c, ETH_PRICE, assets_to_simulate, assets_a
     json.dump(data, fp)
 
 
-def create_dex_information1():
-    print("create_dex_information")
-    data = {"json_time": time.time()}
-    for market in assets_to_simulate:
-        data[market] = {"count": 0, "total": 0, "avg": 0, "med": 0,
-                        "top_10": 0,
-                        "top_5": 0, "top_1": 0, "users": []}
-
-    fp = open("webserver" + os.path.sep + SITE_ID + os.path.sep + "dex_liquidity.json", "w")
-    json.dump(data, fp)
-
-
 def create_dex_information():
     print("create_dex_information")
     data = {"json_time": time.time()}
@@ -155,31 +141,6 @@ def create_dex_information():
     fp = open("webserver" + os.path.sep + SITE_ID + os.path.sep + "dex_liquidity.json", "w")
     json.dump(data, fp)
 
-def get_alert_params():
-    alert_params = []
-    
-    # RISK DAO CHANNEL: send all alerts to risk_dao_channel
-    alert_params.append({
-        "is_default": True, # is default mean it's the risk dao general channel where all msg are sent
-        "tg_bot_id": private_config.risk_dao_bot,
-        "tg_channel_id": private_config.risk_dao_channel,
-        "oracle_threshold": 3, # oracle threshold is always in absolute
-        "slippage_threshold": 10, # liquidity threshold before sending alert
-        "only_negative": False, # only send liquidity alert if the new volume < old volume
-    })
-
-    # REAL AURIGAMI ALERT CHANNEL: send only oracle > 3% and liquidity alerts where <-10%
-    alert_params.append({
-        "is_default": False, # is default mean it's the risk dao general channel where all msg are sent
-        "tg_bot_id": private_config.risk_dao_bot,
-        "tg_channel_id": private_config.aurignmi_channel,
-        "oracle_threshold": 3, # oracle threshold is always in absolute
-        "slippage_threshold": 10, # liquidity threshold before sending alert
-        "only_negative": True, # only send liquidity alert if the new volume < old volume
-    })
-
-    return alert_params
-
 
 # def fix_usd_volumes_for_slippage():
 #     file = open("webserver" + os.sep + SITE_ID + os.sep + "usd_volume_for_slippage.json")
@@ -189,26 +150,16 @@ def get_alert_params():
 #     json.dump(data, fp)
 
 
+ETH_PRICE = 1600
+
 lending_platform_json_file = ".." + os.path.sep + "aurigami" + os.path.sep + "data.json"
-oracle_json_file = ".." + os.path.sep + "aurigami" + os.path.sep + "oracle.json"
 dex_paths = [".." + os.path.sep + "trisolaris" + os.path.sep]
 stnear_stash = ".." + os.path.sep + "aurigami" + os.path.sep + "stNEARLiquidity.json"
+oracle_json_file = ".." + os.path.sep + "aurigami" + os.path.sep + "oracle.json"
 
 assets_to_simulate = ["auETH", "auWBTC", "auWNEAR", "auSTNEAR", "auUSDC", "auUSDT"]
 assets_aliases = {"auETH": "ETH", "auWBTC": "BTC", "auWNEAR": "NEAR", "auSTNEAR": "NEAR", "auUSDT": "USDT",
                   "auUSDC": "USDT"}
-ETH_PRICE = 1600
-print_time_series = False
-total_jobs = 5
-platform_prefix = "au"
-SITE_ID = "0"
-chain_id = "aurora"
-l_factors = [0.25, 0.5, 1, 1.5, 2]
-
-alert_mode = False
-send_alerts = False
-old_alerts = {}
-
 c = {
     "series_std_ratio": 0,
     'volume_for_slippage_10_percentss': [],
@@ -222,103 +173,77 @@ c = {
     "l_factors": [0.25, 0.5, 1, 1.5, 2]
 }
 
+print_time_series = False
+total_jobs = 5
+platform_prefix = "au"
+SITE_ID = "0"
+chain_id = "aurora"
+l_factors = [0.25, 0.5, 1, 1.5, 2]
+
 if __name__ == '__main__':
     fast_mode = len(sys.argv) > 1
     print("FAST MODE", fast_mode)
-    alert_mode = len(sys.argv) > 2
-    print("ALERT MODE", alert_mode)
-    send_alerts = len(sys.argv) > 3
-    print("SEND ALERTS", send_alerts)
-    if os.path.sep in SITE_ID:
-        SITE_ID = SITE_ID.split(os.path.sep)[0]
 
-    while True:
-        SITE_ID = utils.get_site_id(SITE_ID)
-        file = open(lending_platform_json_file)
-        data = json.load(file)
+    SITE_ID = utils.get_site_id(SITE_ID)
+    file = open(lending_platform_json_file)
+    data = json.load(file)
 
-        if os.path.exists(oracle_json_file):
-            file = open(oracle_json_file)
-            oracle = json.load(file)
-            data["prices"] = copy.deepcopy(oracle["prices"])
-            print("FAST ORACLE")
+    if os.path.exists(oracle_json_file):
+        file = open(oracle_json_file)
+        oracle = json.load(file)
+        data["prices"] = copy.deepcopy(oracle["prices"])
 
-        file = open(stnear_stash)
-        data1 = json.load(file)
+    file = open(stnear_stash)
+    data1 = json.load(file)
 
-        cp_parser = compound_parser.CompoundParser()
-        users_data, assets_liquidation_data, \
-        last_update_time, names, inv_names, decimals, collateral_factors, borrow_caps, collateral_caps, prices, \
-        underlying, inv_underlying, liquidation_incentive, orig_user_data, totalAssetCollateral, totalAssetBorrow = cp_parser.parse(
-            data)
+    cp_parser = compound_parser.CompoundParser()
+    users_data, assets_liquidation_data, \
+    last_update_time, names, inv_names, decimals, collateral_factors, borrow_caps, collateral_caps, prices, \
+    underlying, inv_underlying, liquidation_incentive, orig_user_data, totalAssetCollateral, totalAssetBorrow = cp_parser.parse(
+        data)
 
-        users_data["nl_user_collateral"] = 0
-        users_data["nl_user_debt"] = 0
+    users_data["nl_user_collateral"] = 0
+    users_data["nl_user_debt"] = 0
 
-        for base_to_simulation in assets_to_simulate:
-            users_data["NL_COLLATERAL_" + base_to_simulation] = users_data["NO_CF_COLLATERAL_" + base_to_simulation]
-            users_data["NL_DEBT_" + base_to_simulation] = users_data["DEBT_" + base_to_simulation]
-            users_data["MIN_" + base_to_simulation] = users_data[
-                ["NO_CF_COLLATERAL_" + base_to_simulation, "DEBT_" + base_to_simulation]].min(axis=1)
+    for base_to_simulation in assets_to_simulate:
+        users_data["NL_COLLATERAL_" + base_to_simulation] = users_data["NO_CF_COLLATERAL_" + base_to_simulation]
+        users_data["NL_DEBT_" + base_to_simulation] = users_data["DEBT_" + base_to_simulation]
+        users_data["MIN_" + base_to_simulation] = users_data[
+            ["NO_CF_COLLATERAL_" + base_to_simulation, "DEBT_" + base_to_simulation]].min(axis=1)
 
-            users_data["NL_COLLATERAL_" + base_to_simulation] -= users_data["MIN_" + base_to_simulation]
-            users_data["NL_DEBT_" + base_to_simulation] -= users_data["MIN_" + base_to_simulation]
-            users_data["nl_user_collateral"] += users_data["NL_COLLATERAL_" + base_to_simulation]
-            users_data["nl_user_debt"] += users_data["NL_DEBT_" + base_to_simulation]
+        users_data["NL_COLLATERAL_" + base_to_simulation] -= users_data["MIN_" + base_to_simulation]
+        users_data["NL_DEBT_" + base_to_simulation] -= users_data["MIN_" + base_to_simulation]
+        users_data["nl_user_collateral"] += users_data["NL_COLLATERAL_" + base_to_simulation]
+        users_data["nl_user_debt"] += users_data["NL_DEBT_" + base_to_simulation]
 
-        kp = kyber_prices.KyberPrices("1313161554", inv_names, underlying, decimals)
-        base_runner.create_overview(SITE_ID, users_data, totalAssetCollateral, totalAssetBorrow)
-        base_runner.create_lending_platform_current_information(SITE_ID, last_update_time, names, inv_names, decimals,
-                                                                prices, collateral_factors, collateral_caps, borrow_caps,
-                                                                underlying)
-        base_runner.create_account_information(SITE_ID, users_data, totalAssetCollateral, totalAssetBorrow, inv_names,
-                                               assets_liquidation_data)
-        base_runner.create_oracle_information(SITE_ID, prices, chain_id, names, assets_aliases, kp.get_price)
-        create_dex_information()
-        base_runner.create_whale_accounts_information(SITE_ID, users_data, assets_to_simulate)
-        base_runner.create_open_liquidations_information(SITE_ID, users_data, assets_to_simulate)
+    kp = kyber_prices.KyberPrices("1313161554", inv_names, underlying, decimals)
+    base_runner.create_overview(SITE_ID, users_data, totalAssetCollateral, totalAssetBorrow)
+    base_runner.create_lending_platform_current_information(SITE_ID, last_update_time, names, inv_names, decimals,
+                                                            prices, collateral_factors, collateral_caps, borrow_caps,
+                                                            underlying)
+    base_runner.create_account_information(SITE_ID, users_data, totalAssetCollateral, totalAssetBorrow, inv_names,
+                                           assets_liquidation_data)
+    base_runner.create_oracle_information(SITE_ID, prices, chain_id, names, assets_aliases, kp.get_price)
+    create_dex_information()
+    base_runner.create_whale_accounts_information(SITE_ID, users_data, assets_to_simulate)
+    base_runner.create_open_liquidations_information(SITE_ID, users_data, assets_to_simulate)
 
-        base_runner.create_usd_volumes_for_slippage(SITE_ID, chain_id, inv_names, liquidation_incentive, kp.get_price,
-                                                False,
-                                                float(data1["wNEARBalance"]) * prices[inv_names["auWNEAR"]],
-                                                float(data1["stNEARBalance"]) * prices[inv_names["auSTNEAR"]])
-        if alert_mode:
-            d1 = utils.get_file_time(oracle_json_file)
-            d2 = utils.get_file_time(stnear_stash)
-            d1 = min(d1, d2)
-            d1 = min(last_update_time, d1)
-            
-            alert_params = get_alert_params()
-            print('alert_params', alert_params)
-            old_alerts = utils.compare_to_prod_and_send_alerts(old_alerts, d1, "aurigami", "0", SITE_ID, alert_params, send_alerts)
-            print("Alert Mode.Sleeping For 30 Minutes")
-            time.sleep(30 * 60)
-        else:
-            base_runner.create_assets_std_ratio_information(SITE_ID, ["BTC", "ETH", "NEAR", "USDT"],
-                                                            [("04", "2022"), ("05", "2022"), ("06", "2022")])
+    base_runner.create_usd_volumes_for_slippage(SITE_ID, chain_id, inv_names, liquidation_incentive, kp.get_price,
+                                            False,
+                                            float(data1["wNEARBalance"]) * prices[inv_names["auWNEAR"]],
+                                            float(data1["stNEARBalance"]) * prices[inv_names["auSTNEAR"]])
 
-            create_simulation_config(SITE_ID, c, ETH_PRICE, assets_to_simulate, assets_aliases, liquidation_incentive,
-                                      inv_names)
-            base_runner.create_simulation_results(SITE_ID, ETH_PRICE, total_jobs, collateral_factors, inv_names,
-                                                  print_time_series, fast_mode)
-            base_runner.create_risk_params(SITE_ID, ETH_PRICE, total_jobs, l_factors, print_time_series)
-            base_runner.create_current_simulation_risk(SITE_ID, ETH_PRICE, users_data, assets_to_simulate, assets_aliases,
-                                                       collateral_factors, inv_names, liquidation_incentive, total_jobs, False)
-
-            n = datetime.datetime.now().timestamp()
-            d1 = utils.get_file_time(oracle_json_file)
-            d2 = utils.get_file_time(stnear_stash)
-            d0 = min(d1, d2)
-            d0 = min(last_update_time, d0)
-            utils.update_time_stamps(SITE_ID, d0)
-            utils.publish_results(SITE_ID)
-            utils.compare_to_prod_and_send_alerts(old_alerts, d0, "aurigami", "0", SITE_ID, "", 10, False)
-            if d1 < float('inf'):
-                print("oracle_json_file", round((n - d1) / 60), "Minutes")
-            if last_update_time < float('inf'):
-                print("last_update_time", round((n - last_update_time) / 60), "Minutes")
-            if d2 < float('inf'):
-                print("stnear_stash", round((n - d2) / 60), "Minutes")
-            print("Simulation Ended")
-            print()
-            exit()
+    base_runner.create_assets_std_ratio_information(SITE_ID, ["BTC", "ETH", "NEAR", "USDT"],
+                                                    [("04", "2022"), ("05", "2022"), ("06", "2022")])
+    create_simulation_config(SITE_ID, c, ETH_PRICE, assets_to_simulate, assets_aliases, liquidation_incentive,
+                              inv_names)
+    base_runner.create_simulation_results(SITE_ID, ETH_PRICE, total_jobs, collateral_factors, inv_names,
+                                          print_time_series, fast_mode)
+    base_runner.create_risk_params(SITE_ID, ETH_PRICE, total_jobs, l_factors, print_time_series)
+    base_runner.create_current_simulation_risk(SITE_ID, ETH_PRICE, users_data, assets_to_simulate, assets_aliases,
+                                               collateral_factors, inv_names, liquidation_incentive, total_jobs, False)
+    d1 = utils.get_file_time(oracle_json_file)
+    d2 = utils.get_file_time(stnear_stash)
+    d1 = min(d1, d2)
+    utils.update_time_stamps(SITE_ID, min(last_update_time, d1))
+    utils.publish_results(SITE_ID)

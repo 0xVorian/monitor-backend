@@ -39,12 +39,7 @@ def get_usd_volume_for_slippage(base, quote, slippage, asset_usdc_price, get_pri
         else:
             price = get_price_function(base, quote, avg_volume / asset_usdc_price[base])
 
-        # if price == -1, assume the avg_volume was too high to get a quote price
-        # to force retrying with a lower volume next, set avg_slippage to 100
-        if price == -1:
-            avg_slippage = 100
-        else:
-            avg_slippage = price / base_price
+        avg_slippage = price / base_price
         print("min_price_volume", round(min_price_volume), "max_price_volume", round(max_price_volume),
               "Volume", round(avg_volume), "Slippage", round(avg_slippage, 3), "Target", slippage, "Price", price)
 
@@ -73,7 +68,7 @@ def get_usd_volumes_for_slippage(chain_id, inv_names, liquidation_incentive, get
             if quote == "VST" or quote == "sGLP":
                 continue
             base = "VST"
-        elif chain_id == "yokaiswap" or chain_id == "og":
+        elif chain_id == "yokaiswap":
             if quote == "USDC":
                 asset_usdc_price[quote] = 1
                 continue
@@ -88,18 +83,24 @@ def get_usd_volumes_for_slippage(chain_id, inv_names, liquidation_incentive, get
     all_prices = {}
     for base in inv_names:
         for quote in inv_names:
-            if base == quote or (chain_id == "arbitrum" and (base != "VST" or quote == "sGLP")):
+            if base == quote or quote == "VST" or quote == "sGLP" or (only_usdt and base != "VST"):
                 continue
             if base not in all_prices:
                 all_prices[base] = {}
-            if base == "VST":
-                lic = float(liquidation_incentive[inv_names[quote]])
-            else:
+            if not only_usdt:
                 lic = float(liquidation_incentive[inv_names[base]])
+            else:
+                lic = float(liquidation_incentive[inv_names[quote]])
             print(base, quote)
             llc = lic if lic >= 1 else 1 + lic
             volume = get_usd_volume_for_slippage(base, quote, llc, asset_usdc_price, get_price_function,
                                             near_to_stnear_volume, stnear_to_near_volume)
             all_prices[base][quote] = {"volume": volume, "llc": llc}
+
+    if chain_id == "arbitrum":
+        lic = float(liquidation_incentive[inv_names["sGLP"]])
+        llc = lic if lic >= 1 else 1 + lic
+        #all_prices["VST"] = {}
+        all_prices["VST"]["sGLP"] = {"volume": all_prices["VST"]["renBTC"]["volume"], "llc": llc}
 
     return all_prices

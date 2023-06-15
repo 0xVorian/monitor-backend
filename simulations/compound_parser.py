@@ -130,33 +130,16 @@ class CompoundParser:
             for i in reversed(np.arange(0, 5, 0.1)):
                 users_total_bad_debt, users_assets_total_bad_debt = self.get_total_bad_debt(users, asset, i)
                 key = asset_price * i
-                for asset_name in assets_to_check:
-                    asset_id = self.inv_names[asset_name]
+                for asset_id in users_assets_total_bad_debt:
+                    asset_name = self.names[asset_id]
                     if asset_name != asset:
                         if asset_name not in results:
                             results[asset_name] = {}
-                        total = 0
-                        if asset_id in users_assets_total_bad_debt:
-                            total = users_assets_total_bad_debt[asset_id]
-                        results[asset_name][key] = total
+                        results[asset_name][key] = users_assets_total_bad_debt[asset_id]
 
             assets_liquidation_data[self.inv_names[asset]] = results
 
             users_data = pd.DataFrame(users_data)
-            user_data_columns = users_data.columns
-            for asset in assets_to_check:
-                if "COLLATERAL_" + asset not in user_data_columns:
-                    users_data["COLLATERAL_" + asset] = 0
-                    print("COLLATERAL_" + asset, "Added")
-
-                if "NO_CF_COLLATERAL_" + asset not in user_data_columns:
-                    users_data["NO_CF_COLLATERAL_" + asset] = 0
-                    print("NO_CF_COLLATERAL_" + asset, "Added")
-
-                if "DEBT_" + asset not in user_data_columns:
-                    users_data["DEBT_" + asset] = 0
-                    print("DEBT_" + asset, "Added")
-
             orig_user_data = pd.DataFrame(orig_user_data)
 
         return users_data, assets_liquidation_data, last_update_time, self.names, self.inv_names, self.decimals,\
