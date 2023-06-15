@@ -50,74 +50,58 @@ const balancerLiquidityConfig = {
         address: "0xDDAfbb505ad214D7b80b1f830fcCc89B60fb7A83",
         decimals: 6,
         quotes: [
-            "WETH",
-            "wstETH"
+            "WETH"
         ]
     },
     "WXDAI": {
         address: "0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d",
         decimals: 18,
         quotes: [
-            "WETH",
-            "wstETH"
+            "WETH"
         ]
     },
     "USDT": {
         address: "0x4ECaBa5870353805a9F068101A40E0f32ed605C6",
         decimals: 6,
         quotes: [
-            "WETH",
-            "wstETH"
+            "WETH"
         ]
     },
     "wstETH": {
         address: "0x6C76971f98945AE98dD7d4DFcA8711ebea946eA6",
         decimals: 18,
         quotes: [
-            "USDC",
-            "WXDAI",
-            "LINK",
-            "GNO",
-            "WBTC",
             "WETH",
-            "FOX",
-            "USDT",
-            "EURe",
         ]
     },
     "LINK": {
         address: "0xE2e73A1c69ecF83F464EFCE6A5be353a37cA09b2",
         decimals: 18,
         quotes: [
-            "wstETH",
         ]
     },
     "GNO": {
         address: "0x9C58BAcC331c9aa871AFD802DB6379a98e80CEdb",
         decimals: 18,
         quotes: [
-            "wstETH",
         ]
     },
     "WBTC": {
         address: "0x8e5bBbb09Ed1ebdE8674Cda39A0c169401db4252",
         decimals: 8,
         quotes: [
-            "wstETH",
         ]
     },
     "FOX": {
         address: "0x21a42669643f45Bc0e086b8Fc2ed70c23D67509d",
         decimals: 18,
         quotes: [
-            "wstETH",
         ]
     },
     "EURe": {
         address: "0xcB444e90D8198415266c6a2724b7900fb12FC56E",
         decimals: 18,
         quotes: [
-            "wstETH",
         ]
     }
 }
