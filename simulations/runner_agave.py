@@ -124,13 +124,39 @@ def fix_usd_volume_for_slippage():
     current_file = open("webserver" + os.path.sep + SITE_ID + os.path.sep + "usd_volume_for_slippage.json")
     current_data = json.load(current_file)
 
+    # overwrite current data with balancer data
     for base_symbol in balancer_data: 
         if base_symbol == 'json_time': continue
         for quote_symbol in balancer_data[base_symbol]:
-            # overwrite current data with balancer data
             print("overwritting volume for", base_symbol, quote_symbol, current_data[base_symbol][quote_symbol], "with", balancer_data[base_symbol][quote_symbol])
             current_data[base_symbol][quote_symbol] = balancer_data[base_symbol][quote_symbol]
+    
+    # for every wstETH pairs (whether base or quote), replace value by ETH value
+    # e.g:
+    # - wstETH/USDC => ETH/USDC 
+    # - GNO/wstETH => GNO/ETH
+    for base_symbol in current_data: 
+        if base_symbol == 'json_time': continue
+        for quote_symbol in current_data[base_symbol]:
+            if base_symbol == 'wstETH' and quote_symbol == 'WETH':
+                continue
+            if quote_symbol == 'wstETH' and base_symbol == 'WETH':
+                continue
+
+            if base_symbol == 'wstETH' or quote_symbol == 'wstETH':
+                new_base = base_symbol
+                new_quote = quote_symbol
+                if new_base == 'wstETH':
+                    new_base = 'WETH'
+                if new_quote == 'wstETH':
+                    new_quote = 'WETH'
+                print("overwritting volume for", base_symbol, quote_symbol, 'with new symbols:', new_base, new_quote)
+                print('old value:', current_data[base_symbol][quote_symbol], "new value:", current_data[new_base][new_quote])
+                current_data[base_symbol][quote_symbol] = current_data[new_base][new_quote]
+
+
             
+
     balancer_file.close()
     current_file.close()
     fp = open("webserver" + os.path.sep + SITE_ID + os.path.sep + "usd_volume_for_slippage.json", "w")
@@ -290,7 +316,6 @@ if __name__ == '__main__':
                     print('Adding', tokenName, 'to the ignore list because collateralCap:', tokenCap)
                     ignore_list.append(tokenName)
             
-            ignore_list.append('wstETH')
             # for every tokens in the ignore list, delete entry in inv_names before calling 'create_usd_volumes_for_slippage'
             # it will remove them from the data fetch and will greatly speed up the alert process
             # the slippage data for these tokens will not be needed anyway as we will ignore them
