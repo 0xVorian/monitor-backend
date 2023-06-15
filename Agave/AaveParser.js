@@ -90,7 +90,7 @@ class Aave {
             "collateralCaps" : JSON.stringify(this.collateralCaps),
             "decimals" : JSON.stringify(this.decimals),
             "underlying" : JSON.stringify(this.underlying),
-            "closeFactor" :  JSON.stringify(this.closeFactor),
+            "closeFactor" : JSON.stringify(this.closeFactor),
             "totalCollateral" : JSON.stringify(this.totalCollateral),
             "totalBorrows" : JSON.stringify(this.totalBorrows),                          
             "users" : JSON.stringify(this.users)
