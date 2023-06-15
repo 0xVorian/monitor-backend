@@ -82,7 +82,7 @@ class Aave {
         {
             "markets" : JSON.stringify(this.markets),
             "prices" : JSON.stringify(this.prices),
-            "lastUpdateTime" : JSON.stringify(this.lastUpdateTime),
+            "lastUpdateTime" : this.lastUpdateTime,
             "liquidationIncentive" : JSON.stringify(this.liquidationIncentive),
             "collateralFactors" : JSON.stringify(this.collateralFactors),
             "names" : JSON.stringify(this.names),
