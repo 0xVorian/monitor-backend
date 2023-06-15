@@ -43,6 +43,7 @@ const balancerLiquidityConfig = {
             "USDC",
             "WXDAI",
             "USDT",
+            "wstETH"
         ]
     },
     "USDC": {
@@ -64,6 +65,43 @@ const balancerLiquidityConfig = {
         decimals: 6,
         quotes: [
             "WETH"
+        ]
+    },
+    "wstETH": {
+        address: "0x6C76971f98945AE98dD7d4DFcA8711ebea946eA6",
+        decimals: 18,
+        quotes: [
+            "WETH",
+        ]
+    },
+    "LINK": {
+        address: "0xE2e73A1c69ecF83F464EFCE6A5be353a37cA09b2",
+        decimals: 18,
+        quotes: [
+        ]
+    },
+    "GNO": {
+        address: "0x9C58BAcC331c9aa871AFD802DB6379a98e80CEdb",
+        decimals: 18,
+        quotes: [
+        ]
+    },
+    "WBTC": {
+        address: "0x8e5bBbb09Ed1ebdE8674Cda39A0c169401db4252",
+        decimals: 8,
+        quotes: [
+        ]
+    },
+    "FOX": {
+        address: "0x21a42669643f45Bc0e086b8Fc2ed70c23D67509d",
+        decimals: 18,
+        quotes: [
+        ]
+    },
+    "EURe": {
+        address: "0xcB444e90D8198415266c6a2724b7900fb12FC56E",
+        decimals: 18,
+        quotes: [
         ]
     }
 }

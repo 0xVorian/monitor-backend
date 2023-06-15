@@ -116,6 +116,17 @@ def create_simulation_config(SITE_ID, c, ETH_PRICE, assets_to_simulate, assets_a
     fp = open("webserver" + os.path.sep + SITE_ID + os.path.sep + "simulation_configs.json", "w")
     json.dump(data, fp)
 
+def fix_wstETH_price():
+    oracle_file = open("webserver" + os.path.sep + SITE_ID + os.path.sep + "oracles.json")
+    oracle_data = json.load(oracle_file)
+    oracle_file.close()
+
+    print('updating wstETH price, from:', oracle_data['wstETH']['dex_price'],'to:', oracle_data['wstETH']['oracle'])
+    oracle_data['wstETH']['dex_price'] = oracle_data['wstETH']['oracle']
+    
+    fp = open("webserver" + os.path.sep + SITE_ID + os.path.sep + "oracles.json", "w")
+    json.dump(oracle_data, fp)
+    fp.close()
 
 def fix_usd_volume_for_slippage():
     balancer_file = open(balancer_volume_json_file)
@@ -124,13 +135,36 @@ def fix_usd_volume_for_slippage():
     current_file = open("webserver" + os.path.sep + SITE_ID + os.path.sep + "usd_volume_for_slippage.json")
     current_data = json.load(current_file)
 
+    # overwrite current data with balancer data
     for base_symbol in balancer_data: 
         if base_symbol == 'json_time': continue
         for quote_symbol in balancer_data[base_symbol]:
-            # overwrite current data with balancer data
             print("overwritting volume for", base_symbol, quote_symbol, current_data[base_symbol][quote_symbol], "with", balancer_data[base_symbol][quote_symbol])
             current_data[base_symbol][quote_symbol] = balancer_data[base_symbol][quote_symbol]
-            
+    
+    # for every wstETH pairs (whether base or quote), replace value by ETH value
+    # e.g:
+    # - wstETH/USDC => ETH/USDC 
+    # - GNO/wstETH => GNO/ETH
+    for base_symbol in current_data: 
+        if base_symbol == 'json_time': continue
+        for quote_symbol in current_data[base_symbol]:
+            if base_symbol == 'wstETH' and quote_symbol == 'WETH':
+                continue
+            if quote_symbol == 'wstETH' and base_symbol == 'WETH':
+                continue
+
+            if base_symbol == 'wstETH' or quote_symbol == 'wstETH':
+                new_base = base_symbol
+                new_quote = quote_symbol
+                if new_base == 'wstETH':
+                    new_base = 'WETH'
+                if new_quote == 'wstETH':
+                    new_quote = 'WETH'
+                print("overwritting volume for", base_symbol, quote_symbol, 'with new symbols:', new_base, new_quote)
+                print('old value:', current_data[base_symbol][quote_symbol], "new value:", current_data[new_base][new_quote])
+                current_data[base_symbol][quote_symbol] = current_data[new_base][new_quote]
+
     balancer_file.close()
     current_file.close()
     fp = open("webserver" + os.path.sep + SITE_ID + os.path.sep + "usd_volume_for_slippage.json", "w")
@@ -302,6 +336,7 @@ if __name__ == '__main__':
         base_runner.create_usd_volumes_for_slippage(SITE_ID, chain_id, inv_names, liquidation_incentive, kp.get_price, 
                                                     False)
         fix_usd_volume_for_slippage()
+        fix_wstETH_price()
         if alert_mode:
             d1 = utils.get_file_time(oracle_json_file)
             d1 = min(last_update_time, d1)
