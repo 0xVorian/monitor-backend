@@ -77,9 +77,11 @@ class flare_simulation():
     def crete_price_trajectory(self, eth_usd_data, binance_btc_for_flare_data, btc_usd_std, flr_btc_std):
 
         data1 = eth_usd_data
-        data1["btc_usd_price"] = data1["ask_price"]
-        binance_btc_for_flare_data["ask_price"] = binance_btc_for_flare_data["open"]
-        binance_btc_for_flare_data["bid_price"] = binance_btc_for_flare_data["open"]
+        data1["btc_usd_price"] = data1["open"]
+
+        # binance_btc_for_flare_data["ask_price"] = binance_btc_for_flare_data["open"]
+        # binance_btc_for_flare_data["bid_price"] = binance_btc_for_flare_data["open"]
+
         data2 = self.adjust_series_price(copy.deepcopy(binance_btc_for_flare_data), flr_btc_std)
         min_len = min(len(data1), len(data2))
 
@@ -88,6 +90,8 @@ class flare_simulation():
         data1 = data1.reset_index(drop=True)
         data2 = data2.reset_index(drop=True)
         data1["flare_btc_price"] = data2["adjust_price"]
+        data1["timestamp_x"] = data2["timestamp_x"]
+
         dai_eth_array = self.convert_to_array(data1)
         return dai_eth_array
 
@@ -284,7 +288,7 @@ class flare_simulation():
                           label="Btc Usd Price")
 
             x2 = ax1.plot(report_df["timestamp"], (1 / report_df["flare_btc_price"]) / (1 / report_df.iloc[0]["flare_btc_price"]), 'g-',
-                          label="Flare Btc Price")
+                          label="Btc Flare Price")
 
             x3 = ax1.plot(report_df["timestamp"], report_df["usd_ucr"], 'r-', label="Usd CR")
 
@@ -413,15 +417,14 @@ class flare_simulation():
         SITE_ID = utils.get_site_id("flare")
         binance_btc_for_flare_file_name = "data\\binance_btc_for_flare.csv"
         simulation_file_name = "c:\\dev\\monitor-backend\\simulations\\data_worst_day\\data_unified_2020_03_ETHUSDT.csv"
-        btc_usdt_data = pd.read_csv(simulation_file_name)
-        flare_btc_data =  pd.read_csv(binance_btc_for_flare_file_name)
+        flare_btc_data = pd.read_csv(simulation_file_name)
+        btc_usdt_data =  pd.read_csv(binance_btc_for_flare_file_name)
         self.run_simulation(c, btc_usdt_data, flare_btc_data, SITE_ID)
 
 
     def analyaze_random_results(self):
         files = glob.glob("flare_data\\**\\*.csv", recursive=True)
         df = pd.concat((pd.read_csv(f) for f in files), ignore_index=True)
-        # df.to_csv('xxx.csv')
         gg = ["btc_usd_std", "flr_btc_std", "debt_volume", "usd_collateral_volume", "flare_collateral_volume",
               "liquidation_incentive_time_factor", "usd_dl_x", "usd_dl_recovery", "flare_dl_x", "flare_dl_recovery",
               "min_usd_cr", "min_flare_cr", "safe_usd_cr", "safe_flare_cr", "usd_collateral_ratio"]
@@ -494,7 +497,7 @@ class flare_simulation():
         return uniques
 
 
-    def create_timeseries_for_seed(self, seed):
+    def create_timeseries_for_seed(self, seed, title):
         btc_usdt_data = brownian_motion.generate_brownian_motion(0.3, 100, 60 * 24, seed)
         btc_usdt_data["open"] = btc_usdt_data["adjust_price"]
         btc_usdt_data["ask_price"] = btc_usdt_data["adjust_price"]
@@ -508,8 +511,9 @@ class flare_simulation():
         file = self.crete_price_trajectory(btc_usdt_data, flare_btc_data, 1, 1)
         report_df = pd.DataFrame(file)
         plt.plot(report_df["btc_usd_price"] / report_df.iloc[0]["btc_usd_price"], label="btc usd")
-        plt.plot((1 / report_df["flare_btc_price"]) / (1 / report_df.iloc[0]["flare_btc_price"]), label="flare btc")
+        plt.plot((1 / report_df["flare_btc_price"]) / (1 / report_df.iloc[0]["flare_btc_price"]), label="btc flare")
         plt.title("Seed: " + str(seed))
+        plt.suptitle(title)
         plt.legend()
         plt.show()
         plt.cla()
@@ -569,18 +573,21 @@ class flare_simulation():
 
 if __name__ == '__main__':
 
-    save_time_seriws = False
-    save_images = False
-    initail_seed = int(sys.argv[1])
-    total_runs = 50
-    Parallel(n_jobs=10)(delayed(flare_simulation().run_random_simulation)(initail_seed + j) for j in range(total_runs))
+    # save_time_seriws = True
+    # save_images = False
+    # initail_seed = int(sys.argv[1])
+    # total_runs = 50
+    # Parallel(n_jobs=10)(delayed(flare_simulation().run_random_simulation)(initail_seed + j) for j in range(total_runs))
 
     # flare_simulation().analyaze_random_results()
+
+    # flare_simulation().create_timeseries_for_seed(1030, "Best")
+    # flare_simulation().create_timeseries_for_seed(1019, "Worst")
+
     #
-    # save_time_seriws = True
-    # save_images = True
-    # flare_simulation().run_simulations_on_random_analisys("00")
-    # flare_simulation().create_timeseries_for_seed(1018)
+    save_time_seriws = False
+    save_images = True
+    flare_simulation().run_simulations_on_random_analisys("01")
 
     # save_time_seriws = False
     # save_images = True
