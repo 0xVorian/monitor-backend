@@ -587,7 +587,7 @@ if __name__ == '__main__':
     #
     save_time_seriws = False
     save_images = True
-    flare_simulation().run_simulations_on_random_analisys("01")
+    flare_simulation().run_simulations_on_random_analisys("00")
 
     # save_time_seriws = False
     # save_images = True
