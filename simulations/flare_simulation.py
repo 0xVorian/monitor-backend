@@ -257,10 +257,10 @@ class flare_simulation():
                                     f"BtcStd-{btc_usd_std}+" \
                                     f"FlrStd-{flr_btc_std}+" \
                                     f"MinUsdCr-{min_usd_cr}+" \
-                                    f"SafeUsdCr-{initial_safe_usd_cr}+" \
+                                    f"SafeUsdCr-{round(initial_safe_usd_cr,2)}+" \
                                     f"LiTimeFactor-{liquidation_incentive_time_factor}+"\
                                     f"MinFlrCr-{min_flare_cr}+" \
-                                    f"SafeFlrCr-{initial_safe_flare_cr}+" \
+                                    f"SafeFlrCr-{round(initial_safe_flare_cr,2)}+" \
                                     f"UsdCr-{usd_collateral_ratio}+" \
                                     f"UsdDlX-{initial_usd_dl_x}+" \
                                     f"UsdRec-{usd_dl_recovery}+" \
