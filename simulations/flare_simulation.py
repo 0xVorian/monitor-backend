@@ -137,7 +137,7 @@ class flare_simulation():
         min_usd_ucr = float('inf')
         min_flr_ucr = float('inf')
         running_score = 0
-
+        time_series_report_name = ""
         try:
             flr_liquidation_table = []
             usd_liquidation_table = []
@@ -194,7 +194,6 @@ class flare_simulation():
                                                              li,
                                                              usd_collateral_ratio, flr_collateral_volume,
                                                              row_flare_usd_price, safe_flare_cr)
-
                     burned_btc_volume = l_size["burned_btc"]
                     usd_liquidation_volume = l_size["usd_liquidation"]
                     flr_liquidation_volume = l_size["flare_liquidation"]
@@ -202,6 +201,8 @@ class flare_simulation():
 
                     obj = uni_box.find_btc_liquidation_size(burned_btc_volume, flr_liquidation_volume,
                                                             usd_liquidation_volume)
+                    print(obj)
+                    exit()
                     usd_liquidation_volume = obj["usd"]
                     flr_liquidation_volume = obj["flare"]
                     burned_btc_volume = obj["btc"]
@@ -328,7 +329,9 @@ class flare_simulation():
             exit()
 
         finally:
-            return {"btc_usd_std": btc_usd_std,
+            return {
+                    "file_name":time_series_report_name,
+                    "btc_usd_std": btc_usd_std,
                     "flr_btc_std": flr_btc_std,
                     "debt_volume": initial_debt_volume_for_simulation,
                     "usd_collateral_volume": initial_usd_collateral_volume_for_simulation,
@@ -367,6 +370,7 @@ class flare_simulation():
             summary_report.append(report)
             indx += 1
             print(indx / all_runs)
+            pd.DataFrame(summary_report).to_csv(f"webserver" + os.path.sep + SITE_ID + os.path.sep + "summary.csv")
         pd.DataFrame(summary_report).to_csv(f"webserver" + os.path.sep + SITE_ID + os.path.sep + "summary.csv")
 
     def run_random_simulation(self, seed):
@@ -399,6 +403,7 @@ class flare_simulation():
         result = self.run_simulation(c, btc_usdt_data, flare_btc_data, SITE_ID, seed)
 
     def run_regular_simulation(self):
+
         c = {
             "btc_usd_std": [1],
             "flare_btc_std": [0.5],
@@ -413,6 +418,21 @@ class flare_simulation():
             "safe_flare_cr": [0.1, 0.5, 1.0],
             "usd_collateral_ratio": [1],
             "liquidation_incentive_time_factor":[0, 0.05]}
+
+        # c = {
+        #     "btc_usd_std": [1],
+        #     "flare_btc_std": [0.5],
+        #     "debt_volume": [self.initial_dept_volume],
+        #     "usd_dl_x": [0.2],
+        #     "usd_dl_recovery": [30],
+        #     "flare_dl_x": [0.1],
+        #     "flare_dl_recovery": [30],
+        #     "min_usd_cr": [1.2],
+        #     "safe_usd_cr": [0.2],
+        #     "min_flare_cr": [1.5],
+        #     "safe_flare_cr": [0.1],
+        #     "usd_collateral_ratio": [1],
+        #     "liquidation_incentive_time_factor":[0]}
 
         SITE_ID = utils.get_site_id("flare")
         binance_btc_for_flare_file_name = "data\\binance_btc_for_flare.csv"
@@ -585,12 +605,12 @@ if __name__ == '__main__':
     # flare_simulation().create_timeseries_for_seed(1019, "Worst")
 
     #
-    save_time_seriws = False
-    save_images = True
-    flare_simulation().run_simulations_on_random_analisys("00")
-
     # save_time_seriws = False
     # save_images = True
-    # flare_simulation().run_regular_simulation()
+    # flare_simulation().run_simulations_on_random_analisys("00")
+
+    save_time_seriws = True
+    save_images = True
+    flare_simulation().run_regular_simulation()
 
 
