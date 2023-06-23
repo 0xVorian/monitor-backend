@@ -48,12 +48,12 @@ def download_candles(symbol, interval, start_time, end_time):
 
 
 # Example usage
-symbol = "DOGEUSDT"  # Symbol for Bitcoin against USDT
+symbol = "XRPUSDT"  # Symbol for Bitcoin against USDT
 interval = "1m"  # 1-minute interval
 all_candels = []
 year = 2021
 month = 4
-day = 16
+day = 5
 
 start_time = int(datetime(year, month, day , 0, 0).timestamp() * 1000)  # Example: May 30, 2023
 end_time = int(datetime(year, month, day, 23, 59).timestamp() * 1000)  # Example: May 30, 2023
@@ -101,4 +101,4 @@ all_candels = all_candels.drop_duplicates()
 print(len(all_candels))
 print(all_candels["open"].min())
 print(all_candels["close"].max())
-all_candels.to_csv("dogeusdt.csv")
+all_candels.to_csv("xrpusdt.csv")
