@@ -633,7 +633,7 @@ class flare_simulation():
 
 if __name__ == '__main__':
 
-    save_time_seriws = True
+    save_time_seriws =  True
     save_images = False
     initail_seed = int(sys.argv[1])
     total_runs = 50
