@@ -424,9 +424,9 @@ if __name__ == '__main__':
             utils.update_time_stamps(SITE_ID, d0)
             utils.publish_results(SITE_ID)
             # utils.compare_to_prod_and_send_alerts(old_alerts, d1, "vesta", "2", SITE_ID, "", 10, False)
-            if d1 < float('inf'):
-                print("oracle_json_file", round((n - d1) / 60), "Minutes")
-            if last_update_time < float('inf'):
-                print("last_update_time", round((n - last_update_time) / 60), "Minutes")
+            # if d1 < float('inf'):
+            #     print("oracle_json_file", round((n - d1) / 60), "Minutes")
+            # if last_update_time < float('inf'):
+            #     print("last_update_time", round((n - last_update_time) / 60), "Minutes")
             print("Simulation Ended")
             exit()
