@@ -382,9 +382,9 @@ class flare_simulation():
             "flare_btc_std": [1],
             "debt_volume": [self.initial_dept_volume],
             "usd_dl_x": [0.1, 0.2, 0.3],
-            "usd_dl_recovery": [30, 60, 90],
+            "usd_dl_recovery": [30, 60, 90, 120],
             "flare_dl_x": [0.1, 0.2, 0.3],
-            "flare_dl_recovery": [30, 60, 90],
+            "flare_dl_recovery": [30, 60, 90, 120],
             "min_usd_cr": [1.2, 1.3, 1.4],
             "safe_usd_cr": [0.2, 0.3, 0.4],
             "min_flare_cr": [1.5, 1.7, 2.0],
@@ -406,7 +406,6 @@ class flare_simulation():
         result = self.run_simulation(c, btc_usdt_data, flare_btc_data, SITE_ID, seed)
 
     def run_regular_simulation(self):
-
         c = {
             "btc_usd_std": [1],
             "flare_btc_std": [0.5],
@@ -438,10 +437,10 @@ class flare_simulation():
         #     "liquidation_incentive_time_factor":[0]}
 
         SITE_ID = utils.get_site_id("flare")
-        binance_btc_for_flare_file_name = "data\\binance_btc_for_flare.csv"
+        binance_btcusdt = "data\\binance_btcusdt.csv"
         simulation_file_name = "c:\\dev\\monitor-backend\\simulations\\data_worst_day\\data_unified_2020_03_ETHUSDT.csv"
         flare_btc_data = pd.read_csv(simulation_file_name)
-        btc_usdt_data = pd.read_csv(binance_btc_for_flare_file_name)
+        btc_usdt_data = pd.read_csv(binance_btcusdt)
         self.run_simulation(c, btc_usdt_data, flare_btc_data, SITE_ID)
 
     def analyaze_random_results(self):
@@ -634,11 +633,11 @@ class flare_simulation():
 
 if __name__ == '__main__':
 
-    # save_time_seriws = True
-    # save_images = False
-    # initail_seed = int(sys.argv[1])
-    # total_runs = 50
-    # Parallel(n_jobs=10)(delayed(flare_simulation().run_random_simulation)(initail_seed + j) for j in range(total_runs))
+    save_time_seriws = True
+    save_images = False
+    initail_seed = int(sys.argv[1])
+    total_runs = 50
+    Parallel(n_jobs=10)(delayed(flare_simulation().run_random_simulation)(initail_seed + j) for j in range(total_runs))
 
     # flare_simulation().analyaze_random_results()
 
@@ -651,6 +650,6 @@ if __name__ == '__main__':
 
     # flare_simulation().find_ef_on_random_analisys()
 
-    save_time_seriws = True
-    save_images = True
-    flare_simulation().run_regular_simulation()
+    # save_time_seriws = True
+    # save_images = True
+    # flare_simulation().run_regular_simulation()
