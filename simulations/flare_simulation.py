@@ -690,7 +690,7 @@ if __name__ == '__main__':
     save_images = False
     initail_seed = int(sys.argv[1])
     total_runs = 50
-    Parallel(n_jobs=10)(delayed(flare_simulation().run_random_simulation)(initail_seed + j) for j in range(total_runs))
+    Parallel(n_jobs=10)(delayed(flare_simulation().run_random_simulation)("Btc", initail_seed + j) for j in range(total_runs))
 
     # flare_simulation().analyaze_random_results()
 
