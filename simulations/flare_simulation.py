@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from joblib import Parallel, delayed
 import pandas as pd
 import copy
-#import utils
+Rשמגםצ#import utils
 import datetime
 import unibox
 import traceback
@@ -686,12 +686,12 @@ class flare_simulation():
 
 
 if __name__ == '__main__':
-
-    # save_time_seriws =  True
-    # save_images = False
-    # initail_seed = int(sys.argv[1])
-    # total_runs = 50
-    # Parallel(n_jobs=10)(delayed(flare_simulation().run_random_simulation)(initail_seed + j) for j in range(total_runs))
+    ######
+    save_time_seriws =  False
+    save_images = False
+    initail_seed = int(sys.argv[1])
+    total_runs = 50
+    Parallel(n_jobs=10)(delayed(flare_simulation().run_random_simulation)(initail_seed + j) for j in range(total_runs))
 
     # flare_simulation().analyaze_random_results()
 
@@ -704,8 +704,8 @@ if __name__ == '__main__':
 
     # flare_simulation().find_ef_on_random_analisys()
 
-    collateral_asset = "Xrp"
-    save_time_seriws = False
-    save_images = True
-    flare_simulation().run_regular_simulation(collateral_asset)
+    # collateral_asset = "Xrp"
+    # save_time_seriws = False
+    # save_images = True
+    # flare_simulation().run_regular_simulation(collateral_asset)
 
