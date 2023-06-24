@@ -11,7 +11,7 @@ import datetime
 import unibox
 import traceback
 import brownian_motion
-
+import uuid
 
 class flare_simulation():
     liquidation_incentive = 0.1
