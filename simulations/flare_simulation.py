@@ -7,7 +7,8 @@ import matplotlib.pyplot as plt
 from joblib import Parallel, delayed
 import pandas as pd
 import copy
-import utils
+#import utils
+import datetime
 import unibox
 import traceback
 import brownian_motion
@@ -16,6 +17,19 @@ import brownian_motion
 class flare_simulation():
     liquidation_incentive = 0.1
     initial_dept_volume = 100_000_000
+
+
+    def get_site_id(self, SITE_ID, use_random=False):
+        if str(os.path.sep) in SITE_ID:
+            SITE_ID = SITE_ID.split(str(os.path.sep))[0]
+        n = datetime.datetime.now()
+        d = str(n.year) + "-" + str(n.month) + "-" + str(n.day) + "-" + str(n.hour) + "-" + str(n.minute)
+        rnd = ""
+        if use_random:
+            rnd = "_" + str(uuid.uuid4())
+        SITE_ID = SITE_ID + os.path.sep + d + rnd
+        os.makedirs("webserver" + os.path.sep + SITE_ID, exist_ok=True)
+        return SITE_ID
 
     def usd_liquidation_size_with_flare(self, safe_ratio, curr_price, usd_collateral, btc_debt, liquidation_bonus,
                                         usd_liquidation_ratio, flare_collateral, flare_price, flare_safe_ratio):
@@ -396,7 +410,7 @@ class flare_simulation():
             "usd_collateral_ratio": [1],
             "liquidation_incentive_time_factor": [0, 0.05]}
 
-        SITE_ID = utils.get_site_id("flare", True)
+        SITE_ID = self.get_site_id("flare", True)
         btc_usdt_data = brownian_motion.generate_brownian_motion(0.3, 100, 60 * 24, seed)
         btc_usdt_data["open"] = btc_usdt_data["adjust_price"]
         btc_usdt_data["ask_price"] = btc_usdt_data["adjust_price"]
@@ -427,7 +441,7 @@ class flare_simulation():
                 "usd_collateral_ratio": [1],
                 "liquidation_incentive_time_factor": [0, 0.05]}
 
-            SITE_ID = utils.get_site_id("flare")
+            SITE_ID = self.get_site_id("flare")
             binance_btcusdt = "data\\binance_btcusdt.csv"
             simulation_file_name = "c:\\dev\\monitor-backend\\simulations\\data_worst_day\\data_unified_2020_03_ETHUSDT.csv"
             flare_btc_data = pd.read_csv(simulation_file_name)
@@ -437,7 +451,30 @@ class flare_simulation():
         if collateral_asset_name == "Doge":
             c = {
                 "btc_usd_std": [1],
-                "flare_btc_std": [0.5],
+                "flare_btc_std": [2],
+                "debt_volume": [self.initial_dept_volume],
+                "usd_dl_x": [0.1, 0.2, 0.3],
+                "usd_dl_recovery": [30, 60, 90, 120],
+                "flare_dl_x": [0.1, 0.2, 0.3],
+                "flare_dl_recovery": [30, 60, 90, 120],
+                "min_usd_cr": [1.5, 2.0, 2.5],
+                "safe_usd_cr": [0.2, 0.3, 0.4],
+                "min_flare_cr": [2, 2.5, 3.0],
+                "safe_flare_cr": [0.1, 0.5, 1.0],
+                "usd_collateral_ratio": [1],
+                "liquidation_incentive_time_factor": [0, 0.05]}
+
+            SITE_ID = self.get_site_id("flare")
+            binance_dogusdt = "data\\binance_dogeusdt.csv"
+            simulation_file_name = "c:\\dev\\monitor-backend\\simulations\\data_worst_day\\data_unified_2020_03_ETHUSDT.csv"
+            flare_btc_data = pd.read_csv(simulation_file_name)
+            dog_usdt_data = pd.read_csv(binance_dogusdt)
+            self.run_simulation(collateral_asset_name, c, dog_usdt_data, flare_btc_data, SITE_ID)
+
+        if collateral_asset_name == "Xrp":
+            c = {
+                "btc_usd_std": [1],
+                "flare_btc_std": [0.66],
                 "debt_volume": [self.initial_dept_volume],
                 "usd_dl_x": [0.1, 0.2, 0.3],
                 "usd_dl_recovery": [30, 60, 90, 120],
@@ -450,8 +487,8 @@ class flare_simulation():
                 "usd_collateral_ratio": [1],
                 "liquidation_incentive_time_factor": [0, 0.05]}
 
-            SITE_ID = utils.get_site_id("flare")
-            binance_dogusdt = "data\\binance_dogeusdt.csv"
+            SITE_ID = self.get_site_id("flare")
+            binance_dogusdt = "data\\binance_xrpusdt.csv"
             simulation_file_name = "c:\\dev\\monitor-backend\\simulations\\data_worst_day\\data_unified_2020_03_ETHUSDT.csv"
             flare_btc_data = pd.read_csv(simulation_file_name)
             dog_usdt_data = pd.read_csv(binance_dogusdt)
@@ -602,7 +639,7 @@ class flare_simulation():
         return result
 
     def run_simulations_on_random_analisys(self,collateral_asset_name, percentile, file_name="uniques.csv"):
-        SITE_ID = utils.get_site_id("flare")
+        SITE_ID = self.get_site_id("flare")
         df = pd.read_csv(file_name)
         records = df.to_dict('records')
         print(len(records))
@@ -667,8 +704,8 @@ if __name__ == '__main__':
 
     # flare_simulation().find_ef_on_random_analisys()
 
-    collateral_asset = "Doge"
-    save_time_seriws = True
+    collateral_asset = "Xrp"
+    save_time_seriws = False
     save_images = True
     flare_simulation().run_regular_simulation(collateral_asset)
 
