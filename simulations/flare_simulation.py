@@ -494,10 +494,10 @@ class flare_simulation():
             self.run_simulation(collateral_asset_name, c, dog_usdt_data, flare_btc_data, SITE_ID)
 
 
-    def analyaze_random_results(self):
+    def analyaze_random_results(self, collateral_asset_name):
         files = glob.glob("flare_data\\**\\*.csv", recursive=True)
         df = pd.concat((pd.read_csv(f) for f in files), ignore_index=True)
-        gg = ["btc_usd_std", "flr_btc_std", "debt_volume", "usd_collateral_volume", "flare_collateral_volume",
+        gg = [collateral_asset_name + "_usd_std", "flr_" + collateral_asset_name + "_std", "debt_volume", "usd_collateral_volume", "flare_collateral_volume",
               "liquidation_incentive_time_factor", "usd_dl_x", "usd_dl_recovery", "flare_dl_x", "flare_dl_recovery",
               "min_usd_cr", "min_flare_cr", "safe_usd_cr", "safe_flare_cr", "usd_collateral_ratio"]
         # df = pd.read_csv("xxx.csv")
@@ -505,8 +505,8 @@ class flare_simulation():
         uniques = df.loc[df["seed"] == seed][gg]
         for index, row in uniques.iterrows():
             temp_df = df.loc[
-                (df["btc_usd_std"] == row["btc_usd_std"]) &
-                (df["flr_btc_std"] == row["flr_btc_std"]) &
+                (df[collateral_asset_name + "_usd_std"] == row[collateral_asset_name + "_usd_std"]) &
+                (df["flr_" + collateral_asset_name + "_std"] == row["flr_" + collateral_asset_name + "_std"]) &
                 (df["debt_volume"] == row["debt_volume"]) &
                 (df["usd_collateral_volume"] == row["usd_collateral_volume"]) &
                 (df["flare_collateral_volume"] == row["flare_collateral_volume"]) &
@@ -616,7 +616,8 @@ class flare_simulation():
             record["liquidation_incentive_time_factor"],
             SITE_ID, seed)
 
-        gg = ["btc_usd_std", "flr_btc_std", "debt_volume",
+        gg = [collateral_asset_name + "_usd_std",
+              "flr_"+ collateral_asset_name+"_std", "debt_volume",
               "liquidation_incentive_time_factor", "usd_dl_x", "usd_dl_recovery", "flare_dl_x", "flare_dl_recovery",
               "min_usd_cr", "min_flare_cr", "safe_usd_cr", "safe_flare_cr", "usd_collateral_ratio"]
 
@@ -686,20 +687,20 @@ class flare_simulation():
 
 if __name__ == '__main__':
     ######
-    save_time_seriws =  False
-    save_images = False
-    initail_seed = int(sys.argv[1])
-    total_runs = 50
-    Parallel(n_jobs=10)(delayed(flare_simulation().run_random_simulation)("Btc", initail_seed + j) for j in range(total_runs))
+    # save_time_seriws =  False
+    # save_images = False
+    # initail_seed = int(sys.argv[1])
+    # total_runs = 50
+    # Parallel(n_jobs=10)(delayed(flare_simulation().run_random_simulation)("Btc", initail_seed + j) for j in range(total_runs))
 
-    # flare_simulation().analyaze_random_results()
+    # flare_simulation().analyaze_random_results("Btc")
 
     # flare_simulation().create_timeseries_for_seed(1030, "Best")
     # flare_simulation().create_timeseries_for_seed(1019, "Worst")
 
-    # save_time_seriws = False
-    # save_images = True
-    # flare_simulation().run_simulations_on_random_analisys("01")
+    save_time_seriws = False
+    save_images = True
+    flare_simulation().run_simulations_on_random_analisys("Btc", "01")
 
     # flare_simulation().find_ef_on_random_analisys()
 
