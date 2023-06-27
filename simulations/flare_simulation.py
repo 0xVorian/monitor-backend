@@ -570,7 +570,8 @@ class flare_simulation():
 
 
     def analyaze_random_results(self, collateral_asset_name):
-        files = glob.glob("flare_data\\**\\*.csv", recursive=True)
+        files = glob.glob(collateral_asset_name + "_flare_data\\**\\*.csv", recursive=True)
+
         df = pd.concat((pd.read_csv(f) for f in files), ignore_index=True)
         gg = [collateral_asset_name + "_usd_std", "flr_" + collateral_asset_name + "_std", "debt_volume", "usd_collateral_volume", "flare_collateral_volume",
               "liquidation_incentive_time_factor", "usd_dl_x", "usd_dl_recovery", "flare_dl_x", "flare_dl_recovery",
@@ -640,7 +641,7 @@ class flare_simulation():
             uniques.at[index, 'min_usd_ucr_10'] = min_usd_ucr_10
             uniques.at[index, 'min_flare_ucr_10'] = min_flare_ucr_10
 
-        uniques.to_csv("uniques.csv", index=False)
+        uniques.to_csv(collateral_asset_name + "_uniques.csv", index=False)
         return uniques
 
     def create_timeseries_for_seed(self, seed, title):
@@ -713,7 +714,8 @@ class flare_simulation():
 
         return result
 
-    def run_simulations_on_random_analisys(self,collateral_asset_name, percentile, file_name="uniques.csv"):
+    def run_simulations_on_random_analisys(self,collateral_asset_name, percentile):
+        file_name= collateral_asset_name + "_uniques.csv"
         SITE_ID = self.get_site_id("flare")
         df = pd.read_csv(file_name)
         records = df.to_dict('records')
@@ -731,8 +733,9 @@ class flare_simulation():
     def is_alive(self, row):
         return row["min_usd_ucr_01"] >= 1.1 and row["min_flare_ucr_01"] >= 1.1
 
-    def find_ef_on_random_analisys(self, file_name="uniques.csv"):
+    def find_ef_on_random_analisys(self, collateral_asset_name):
         #min_usd_cr, min_flare_cr, safe_usd_cr, safe_flare_cr
+        file_name = collateral_asset_name + "_uniques.csv"
         map = {"min_usd_cr": "+", "min_flare_cr": "+", "safe_usd_cr": "+", "safe_flare_cr": "+",
                "liquidation_incentive_time_factor":"+",
                "usd_dl_x":"+", "flare_dl_x":"+",
@@ -757,28 +760,22 @@ class flare_simulation():
             else:
                 print("index", index1, " is dead")
         print(len(report))
-        pd.DataFrame(report).to_csv("ef.csv", index=False)
+        pd.DataFrame(report).to_csv(collateral_asset_name + "_ef.csv", index=False)
 
 
 if __name__ == '__main__':
-    ######
-    save_time_seriws =  False
-    save_images = False
-    initail_seed = int(sys.argv[1])
-    collateral_asset_name = sys.argv[2]
-    total_runs = 50
-    Parallel(n_jobs=10)(delayed(flare_simulation().run_random_simulation)(collateral_asset_name, initail_seed + j) for j in range(total_runs))
+    # save_time_seriws =  False
+    # save_images = False
+    # initail_seed = int(sys.argv[1])
+    # collateral_asset_name = sys.argv[2]
+    # total_runs = 50
+    # Parallel(n_jobs=10)(delayed(flare_simulation().run_random_simulation)(collateral_asset_name, initail_seed + j) for j in range(total_runs))
 
-    # flare_simulation().analyaze_random_results("Btc")
-
-    # flare_simulation().create_timeseries_for_seed(1030, "Best")
-    # flare_simulation().create_timeseries_for_seed(1019, "Worst")
-
-    # save_time_seriws = False
-    # save_images = True
-    # flare_simulation().run_simulations_on_random_analisys("Btc", "01")
-
-    # flare_simulation().find_ef_on_random_analisys()
+    flare_simulation().analyaze_random_results("Btc")
+    save_time_seriws = False
+    save_images = True
+    flare_simulation().run_simulations_on_random_analisys("Btc", "01")
+    flare_simulation().find_ef_on_random_analisys("Btc")
 
     # collateral_asset = "Xrp"
     # save_time_seriws = False
