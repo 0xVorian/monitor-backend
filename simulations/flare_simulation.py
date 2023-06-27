@@ -412,18 +412,18 @@ class flare_simulation():
                 "liquidation_incentive_time_factor": [0, 0.05]}
 
 
-                SITE_ID = self.get_site_id("flare", True) + "_" + collateral_asset_name
-                btc_usdt_data = brownian_motion.generate_brownian_motion(0.3, 100, 60 * 24, seed)
-                btc_usdt_data["open"] = btc_usdt_data["adjust_price"]
-                btc_usdt_data["ask_price"] = btc_usdt_data["adjust_price"]
-                btc_usdt_data["bid_price"] = btc_usdt_data["adjust_price"]
+            SITE_ID = self.get_site_id("flare", True) + "_" + collateral_asset_name
+            btc_usdt_data = brownian_motion.generate_brownian_motion(0.3, 100, 60 * 24, seed)
+            btc_usdt_data["open"] = btc_usdt_data["adjust_price"]
+            btc_usdt_data["ask_price"] = btc_usdt_data["adjust_price"]
+            btc_usdt_data["bid_price"] = btc_usdt_data["adjust_price"]
 
-                flare_btc_data = brownian_motion.generate_brownian_motion(0.5, 100, 60 * 24, seed + 1)
-                flare_btc_data["open"] = flare_btc_data["adjust_price"]
-                flare_btc_data["ask_price"] = flare_btc_data["adjust_price"]
-                flare_btc_data["bid_price"] = flare_btc_data["adjust_price"]
+            flare_btc_data = brownian_motion.generate_brownian_motion(0.5, 100, 60 * 24, seed + 1)
+            flare_btc_data["open"] = flare_btc_data["adjust_price"]
+            flare_btc_data["ask_price"] = flare_btc_data["adjust_price"]
+            flare_btc_data["bid_price"] = flare_btc_data["adjust_price"]
 
-                result = self.run_simulation(collateral_asset_name, c,btc_usdt_data, flare_btc_data, SITE_ID, seed)
+            result = self.run_simulation(collateral_asset_name, c,btc_usdt_data, flare_btc_data, SITE_ID, seed)
 
         if collateral_asset_name == "Xrp":
             c = {
@@ -730,7 +730,7 @@ class flare_simulation():
         report = []
         for index1, row1 in df.iterrows():
             is_valid = True
-                if self.is_alive(row1):
+            if self.is_alive(row1):
                 for index2, row2 in df.iterrows():
                     if index1 != index2 and self.is_alive(row2) and not self.is_cheaper(row1, row2, map):
                         print("index", index1, "row2 is better")
@@ -753,7 +753,7 @@ if __name__ == '__main__':
     save_time_seriws =  False
     save_images = False
     initail_seed = int(sys.argv[1])
-    collateral_asset_name = int(sys.argv[2])
+    collateral_asset_name = sys.argv[2]
     total_runs = 50
     Parallel(n_jobs=10)(delayed(flare_simulation().run_random_simulation)(collateral_asset_name, initail_seed + j) for j in range(total_runs))
 
