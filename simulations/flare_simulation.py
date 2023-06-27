@@ -30,6 +30,7 @@ class flare_simulation():
         return SITE_ID
 
     def get_site_id_random(self, SITE_ID, collateral_asset_name):
+        use_random = True
         if str(os.path.sep) in SITE_ID:
             SITE_ID = SITE_ID.split(str(os.path.sep))[0]
         n = datetime.datetime.now()
@@ -423,7 +424,7 @@ class flare_simulation():
                 "liquidation_incentive_time_factor": [0, 0.05]}
 
 
-            SITE_ID = self.get_site_id_random("flare", True)
+            SITE_ID = self.get_site_id_random("flare", collateral_asset_name)
             btc_usdt_data = brownian_motion.generate_brownian_motion(0.3, 100, 60 * 24, seed)
             btc_usdt_data["open"] = btc_usdt_data["adjust_price"]
             btc_usdt_data["ask_price"] = btc_usdt_data["adjust_price"]
@@ -453,7 +454,7 @@ class flare_simulation():
                 "liquidation_incentive_time_factor": [0, 0.05]}
 
 
-            SITE_ID = self.get_site_id_random("flare", True)
+            SITE_ID = self.get_site_id_random("flare", collateral_asset_name)
             btc_usdt_data = brownian_motion.generate_brownian_motion(0.66, 100, 60 * 24, seed)
             btc_usdt_data["open"] = btc_usdt_data["adjust_price"]
             btc_usdt_data["ask_price"] = btc_usdt_data["adjust_price"]
@@ -483,7 +484,7 @@ class flare_simulation():
                 "liquidation_incentive_time_factor": [0, 0.05]}
 
 
-            SITE_ID = self.get_site_id_random(("flare", True)
+            SITE_ID = self.get_site_id_random("flare", collateral_asset_name)
             btc_usdt_data = brownian_motion.generate_brownian_motion(2, 100, 60 * 24, seed)
             btc_usdt_data["open"] = btc_usdt_data["adjust_price"]
             btc_usdt_data["ask_price"] = btc_usdt_data["adjust_price"]
