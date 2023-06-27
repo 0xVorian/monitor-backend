@@ -442,18 +442,18 @@ class flare_simulation():
                 "liquidation_incentive_time_factor": [0, 0.05]}
 
 
-                SITE_ID = self.get_site_id("flare", True) + "_" + collateral_asset_name
-                btc_usdt_data = brownian_motion.generate_brownian_motion(0.66, 100, 60 * 24, seed)
-                btc_usdt_data["open"] = btc_usdt_data["adjust_price"]
-                btc_usdt_data["ask_price"] = btc_usdt_data["adjust_price"]
-                btc_usdt_data["bid_price"] = btc_usdt_data["adjust_price"]
+            SITE_ID = self.get_site_id("flare", True) + "_" + collateral_asset_name
+            btc_usdt_data = brownian_motion.generate_brownian_motion(0.66, 100, 60 * 24, seed)
+            btc_usdt_data["open"] = btc_usdt_data["adjust_price"]
+            btc_usdt_data["ask_price"] = btc_usdt_data["adjust_price"]
+            btc_usdt_data["bid_price"] = btc_usdt_data["adjust_price"]
 
-                flare_btc_data = brownian_motion.generate_brownian_motion(0.66, 100, 60 * 24, seed + 1)
-                flare_btc_data["open"] = flare_btc_data["adjust_price"]
-                flare_btc_data["ask_price"] = flare_btc_data["adjust_price"]
-                flare_btc_data["bid_price"] = flare_btc_data["adjust_price"]
+            flare_btc_data = brownian_motion.generate_brownian_motion(0.66, 100, 60 * 24, seed + 1)
+            flare_btc_data["open"] = flare_btc_data["adjust_price"]
+            flare_btc_data["ask_price"] = flare_btc_data["adjust_price"]
+            flare_btc_data["bid_price"] = flare_btc_data["adjust_price"]
 
-                result = self.run_simulation(collateral_asset_name, c,btc_usdt_data, flare_btc_data, SITE_ID, seed)
+            result = self.run_simulation(collateral_asset_name, c,btc_usdt_data, flare_btc_data, SITE_ID, seed)
 
         if collateral_asset_name == "Doge":
             c = {
@@ -472,18 +472,18 @@ class flare_simulation():
                 "liquidation_incentive_time_factor": [0, 0.05]}
 
 
-                SITE_ID = self.get_site_id("flare", True) + "_" + collateral_asset_name
-                btc_usdt_data = brownian_motion.generate_brownian_motion(2, 100, 60 * 24, seed)
-                btc_usdt_data["open"] = btc_usdt_data["adjust_price"]
-                btc_usdt_data["ask_price"] = btc_usdt_data["adjust_price"]
-                btc_usdt_data["bid_price"] = btc_usdt_data["adjust_price"]
+            SITE_ID = self.get_site_id("flare", True) + "_" + collateral_asset_name
+            btc_usdt_data = brownian_motion.generate_brownian_motion(2, 100, 60 * 24, seed)
+            btc_usdt_data["open"] = btc_usdt_data["adjust_price"]
+            btc_usdt_data["ask_price"] = btc_usdt_data["adjust_price"]
+            btc_usdt_data["bid_price"] = btc_usdt_data["adjust_price"]
 
-                flare_btc_data = brownian_motion.generate_brownian_motion(2, 100, 60 * 24, seed + 1)
-                flare_btc_data["open"] = flare_btc_data["adjust_price"]
-                flare_btc_data["ask_price"] = flare_btc_data["adjust_price"]
-                flare_btc_data["bid_price"] = flare_btc_data["adjust_price"]
+            flare_btc_data = brownian_motion.generate_brownian_motion(2, 100, 60 * 24, seed + 1)
+            flare_btc_data["open"] = flare_btc_data["adjust_price"]
+            flare_btc_data["ask_price"] = flare_btc_data["adjust_price"]
+            flare_btc_data["bid_price"] = flare_btc_data["adjust_price"]
 
-                result = self.run_simulation(collateral_asset_name, c,btc_usdt_data, flare_btc_data, SITE_ID, seed)
+            result = self.run_simulation(collateral_asset_name, c,btc_usdt_data, flare_btc_data, SITE_ID, seed)
 
     def run_regular_simulation(self, collateral_asset_name):
         c = {}
