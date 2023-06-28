@@ -296,7 +296,7 @@ class flare_simulation():
                                       f"FlrRec-{flr_dl_recovery}"
 
             report_df = pd.DataFrame(time_series_report)
-            if save_time_seriws:
+            if save_time_series:
                 report_df.to_csv(time_series_report_name + ".csv")
             plt.cla()
             plt.close()
@@ -791,22 +791,22 @@ class flare_simulation():
 
 
 if __name__ == '__main__':
-    # save_time_seriws =  False
-    # save_images = False
-    # initail_seed = int(sys.argv[1])
-    # collateral_asset_name = sys.argv[2]
-    # total_runs = 50
-    # Parallel(n_jobs=10)(delayed(flare_simulation().run_random_simulation)(collateral_asset_name, initail_seed + j) for j in range(total_runs))
+    save_time_series =  False
+    save_images = False
+    initail_seed = int(sys.argv[1])
+    collateral_asset_name = sys.argv[2]
+    total_runs = 50
+    Parallel(n_jobs=10)(delayed(flare_simulation().run_random_simulation)(collateral_asset_name, initail_seed + j) for j in range(total_runs))
 
     # collateral_asset_name = sys.argv[1]
     # flare_simulation().analyaze_random_results(collateral_asset_name)
-    # save_time_seriws = False
+    # save_time_series = False
     # save_images = True
     # flare_simulation().run_simulations_on_random_analisys(collateral_asset_name, "01")
     # flare_simulation().find_ef_on_random_analisys(collateral_asset_name)
 
     # collateral_asset = "Xrp"
-    # save_time_seriws = False
+    # save_time_series = False
     # save_images = True
     # flare_simulation().run_regular_simulation(collateral_asset)
 
