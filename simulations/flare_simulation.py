@@ -669,15 +669,40 @@ class flare_simulation():
     def run_simulation_on_random_analisys(self,collateral_asset_name, SITE_ID, record, percentile):
 
         seed = int(record["seed_" + str(percentile)])
-        btc_usdt_data = brownian_motion.generate_brownian_motion(0.3, 100, 60 * 24, seed)
-        btc_usdt_data["open"] = btc_usdt_data["adjust_price"]
-        btc_usdt_data["ask_price"] = btc_usdt_data["adjust_price"]
-        btc_usdt_data["bid_price"] = btc_usdt_data["adjust_price"]
+        if collateral_asset_name == "Btc":
+            btc_usdt_data = brownian_motion.generate_brownian_motion(0.3, 100, 60 * 24, seed)
+            btc_usdt_data["open"] = btc_usdt_data["adjust_price"]
+            btc_usdt_data["ask_price"] = btc_usdt_data["adjust_price"]
+            btc_usdt_data["bid_price"] = btc_usdt_data["adjust_price"]
 
-        flare_btc_data = brownian_motion.generate_brownian_motion(0.5, 100, 60 * 24, seed + 1)
-        flare_btc_data["open"] = flare_btc_data["adjust_price"]
-        flare_btc_data["ask_price"] = flare_btc_data["adjust_price"]
-        flare_btc_data["bid_price"] = flare_btc_data["adjust_price"]
+            flare_btc_data = brownian_motion.generate_brownian_motion(0.5, 100, 60 * 24, seed + 1)
+            flare_btc_data["open"] = flare_btc_data["adjust_price"]
+            flare_btc_data["ask_price"] = flare_btc_data["adjust_price"]
+            flare_btc_data["bid_price"] = flare_btc_data["adjust_price"]
+
+        if collateral_asset_name == "Xrp":
+            btc_usdt_data = brownian_motion.generate_brownian_motion(0.66, 100, 60 * 24, seed)
+            btc_usdt_data["open"] = btc_usdt_data["adjust_price"]
+            btc_usdt_data["ask_price"] = btc_usdt_data["adjust_price"]
+            btc_usdt_data["bid_price"] = btc_usdt_data["adjust_price"]
+
+            flare_btc_data = brownian_motion.generate_brownian_motion(0.66, 100, 60 * 24, seed + 1)
+            flare_btc_data["open"] = flare_btc_data["adjust_price"]
+            flare_btc_data["ask_price"] = flare_btc_data["adjust_price"]
+            flare_btc_data["bid_price"] = flare_btc_data["adjust_price"]
+
+        if collateral_asset_name == "Doge":
+            btc_usdt_data = brownian_motion.generate_brownian_motion(2, 100, 60 * 24, seed)
+            btc_usdt_data["open"] = btc_usdt_data["adjust_price"]
+            btc_usdt_data["ask_price"] = btc_usdt_data["adjust_price"]
+            btc_usdt_data["bid_price"] = btc_usdt_data["adjust_price"]
+
+            flare_btc_data = brownian_motion.generate_brownian_motion(2, 100, 60 * 24, seed + 1)
+            flare_btc_data["open"] = flare_btc_data["adjust_price"]
+            flare_btc_data["ask_price"] = flare_btc_data["adjust_price"]
+            flare_btc_data["bid_price"] = flare_btc_data["adjust_price"]
+
+
 
         result = flare_simulation().run_single_simulation(
             collateral_asset_name,
@@ -764,18 +789,19 @@ class flare_simulation():
 
 
 if __name__ == '__main__':
-    save_time_seriws =  False
-    save_images = False
-    initail_seed = int(sys.argv[1])
-    collateral_asset_name = sys.argv[2]
-    total_runs = 50
-    Parallel(n_jobs=10)(delayed(flare_simulation().run_random_simulation)(collateral_asset_name, initail_seed + j) for j in range(total_runs))
+    # save_time_seriws =  False
+    # save_images = False
+    # initail_seed = int(sys.argv[1])
+    # collateral_asset_name = sys.argv[2]
+    # total_runs = 50
+    # Parallel(n_jobs=10)(delayed(flare_simulation().run_random_simulation)(collateral_asset_name, initail_seed + j) for j in range(total_runs))
 
-    # flare_simulation().analyaze_random_results("Btc")
-    # save_time_seriws = False
-    # save_images = True
-    # flare_simulation().run_simulations_on_random_analisys("Btc", "01")
-    # flare_simulation().find_ef_on_random_analisys("Btc")
+    collateral_asset_name = sys.argv[1]
+    flare_simulation().analyaze_random_results(collateral_asset_name)
+    save_time_seriws = False
+    save_images = True
+    flare_simulation().run_simulations_on_random_analisys(collateral_asset_name, "01")
+    flare_simulation().find_ef_on_random_analisys(collateral_asset_name)
 
     # collateral_asset = "Xrp"
     # save_time_seriws = False
