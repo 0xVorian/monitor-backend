@@ -814,5 +814,5 @@ if __name__ == '__main__':
     collateral_asset_name = sys.argv[1]
     save_time_series = False
     save_images = False
-    flare_simulation().run_regular_simulation(collateral_asset)
+    flare_simulation().run_regular_simulation(collateral_asset_name)
 
