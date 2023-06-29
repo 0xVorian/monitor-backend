@@ -757,37 +757,41 @@ class flare_simulation():
                 return True
         return False
 
-    def is_alive(self, row):
-        return row["min_usd_ucr_01"] >= 1.1 and row["min_flare_ucr_01"] >= 1.1
+    # def is_alive_random(self, row, is_random):
+    #     if is_random:
+    #         return row["min_usd_ucr_01"] >= 1 and row["min_flare_ucr_01"] >= 1
+    #     else:
+    #         return row["min_usd_ucr"] >= 1 and row["min_flare_ucr"] >= 1
 
-    def find_ef_on_random_analisys(self, collateral_asset_name):
-        #min_usd_cr, min_flare_cr, safe_usd_cr, safe_flare_cr
-        file_name = collateral_asset_name + "_uniques.csv"
+    def find_ef_on_results(self, collateral_asset_name, file_name, is_random):
         map = {"min_usd_cr": "+", "min_flare_cr": "+", "safe_usd_cr": "+", "safe_flare_cr": "+",
                "liquidation_incentive_time_factor":"+",
                "usd_dl_x":"+", "flare_dl_x":"+",
                "usd_dl_recovery":"-", "flare_dl_recovery":"-"}
-        keys = map.keys()
         df = pd.read_csv(file_name)
+        print("Total DF", len(df))
+        if is_random:
+            df = df.loc[(df["min_usd_ucr_01"] > 1) & (df["min_flare_ucr_01"] > 1)]
+        else:
+            df = df.loc[(df["min_usd_ucr"] > 1) & (df["min_flare_ucr"] > 1)]
+        df = df.reset_index(drop=True)
+        print("Total DF after dead", len(df))
         report = []
         for index1, row1 in df.iterrows():
             is_valid = True
-            if self.is_alive(row1):
-                for index2, row2 in df.iterrows():
-                    if index1 != index2 and self.is_alive(row2) and not self.is_cheaper(row1, row2, map):
-                        print("index", index1, "row2 is better")
-                        is_valid = False
-                        break
-                if is_valid:
-                    report_row = {}
-                    for cl in df.columns:
-                        report_row[cl] = row1[cl]
-                    report.append(report_row)
-                    print("report", len(report))
-            else:
-                print("index", index1, " is dead")
+            for index2, row2 in df.iterrows():
+                if index1 != index2 and not self.is_cheaper(row1, row2, map):
+                    print(index1, "index2 is better", index2)
+                    is_valid = False
+                    break
+            if is_valid:
+                report_row = {}
+                for cl in df.columns:
+                    report_row[cl] = row1[cl]
+                report.append(report_row)
+                print("report", len(report))
         print(len(report))
-        pd.DataFrame(report).to_csv(collateral_asset_name + "_ef.csv", index=False)
+        pd.DataFrame(report).to_csv(collateral_asset_name + '_' + str(is_random) + "_ef.csv", index=False)
 
 
 if __name__ == '__main__':
@@ -803,7 +807,9 @@ if __name__ == '__main__':
     # save_time_series = False
     # save_images = True
     # flare_simulation().run_simulations_on_random_analisys(collateral_asset_name, "01")
-    # flare_simulation().find_ef_on_random_analisys(collateral_asset_name)
+
+
+    # flare_simulation().find_ef_on_results("Btc","webserver\\flare\\REGULAR_BTC\\summary.csv", False)
 
     collateral_asset_name = sys.argv[1]
     save_time_series = False
