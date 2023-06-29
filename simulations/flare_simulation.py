@@ -805,7 +805,7 @@ if __name__ == '__main__':
     # flare_simulation().run_simulations_on_random_analisys(collateral_asset_name, "01")
     # flare_simulation().find_ef_on_random_analisys(collateral_asset_name)
 
-    collateral_asset = "Btc"
+    collateral_asset_name = sys.argv[1]
     save_time_series = False
     save_images = False
     flare_simulation().run_regular_simulation(collateral_asset)
