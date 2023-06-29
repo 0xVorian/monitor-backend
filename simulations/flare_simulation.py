@@ -516,8 +516,8 @@ class flare_simulation():
                 "liquidation_incentive_time_factor": [0, 0.05]}
 
             SITE_ID = self.get_site_id("flare")
-            binance_btcusdt = "data\\binance_btcusdt.csv"
-            simulation_file_name = "c:\\dev\\monitor-backend\\simulations\\data_worst_day\\data_unified_2020_03_ETHUSDT.csv"
+            binance_btcusdt = "data" + os.path.sep + "binance_btcusdt.csv"
+            simulation_file_name = "data_worst_day" + os.path.sep + "data_unified_2020_03_ETHUSDT.csv"
             flare_btc_data = pd.read_csv(simulation_file_name)
             btc_usdt_data = pd.read_csv(binance_btcusdt)
             self.run_simulation(collateral_asset_name, c, btc_usdt_data, flare_btc_data, SITE_ID)
@@ -539,8 +539,8 @@ class flare_simulation():
                 "liquidation_incentive_time_factor": [0, 0.05]}
 
             SITE_ID = self.get_site_id("flare")
-            binance_dogusdt = "data\\binance_dogeusdt.csv"
-            simulation_file_name = "c:\\dev\\monitor-backend\\simulations\\data_worst_day\\data_unified_2020_03_ETHUSDT.csv"
+            binance_dogusdt = "data" + os.path.sep + "binance_dogeusdt.csv"
+            simulation_file_name = "data_worst_day" + os.path.sep + "data_unified_2020_03_ETHUSDT.csv"
             flare_btc_data = pd.read_csv(simulation_file_name)
             dog_usdt_data = pd.read_csv(binance_dogusdt)
             self.run_simulation(collateral_asset_name, c, dog_usdt_data, flare_btc_data, SITE_ID)
@@ -562,8 +562,8 @@ class flare_simulation():
                 "liquidation_incentive_time_factor": [0, 0.05]}
 
             SITE_ID = self.get_site_id("flare")
-            binance_dogusdt = "data\\binance_xrpusdt.csv"
-            simulation_file_name = "c:\\dev\\monitor-backend\\simulations\\data_worst_day\\data_unified_2020_03_ETHUSDT.csv"
+            binance_dogusdt = "data" + os.path.sep + "binance_xrpusdt.csv"
+            simulation_file_name = "data_worst_day" + os.path.sep + "data_unified_2020_03_ETHUSDT.csv"
             flare_btc_data = pd.read_csv(simulation_file_name)
             dog_usdt_data = pd.read_csv(binance_dogusdt)
             self.run_simulation(collateral_asset_name, c, dog_usdt_data, flare_btc_data, SITE_ID)
