@@ -408,7 +408,8 @@ class flare_simulation():
             summary_report.append(report)
             indx += 1
             print(indx / all_runs)
-            # pd.DataFrame(summary_report).to_csv(f"webserver" + os.path.sep + SITE_ID + os.path.sep + "summary.csv")
+            if save_all_the_way:
+                pd.DataFrame(summary_report).to_csv(f"webserver" + os.path.sep + SITE_ID + os.path.sep + "summary.csv")
         pd.DataFrame(summary_report).to_csv(f"webserver" + os.path.sep + SITE_ID + os.path.sep + "summary.csv")
 
     def run_random_simulation(self, collateral_asset_name, seed):
@@ -798,6 +799,7 @@ class flare_simulation():
 
 
 if __name__ == '__main__':
+    save_all_the_way = True
     save_time_series =  False
     save_images = False
     initail_seed = int(sys.argv[1])
