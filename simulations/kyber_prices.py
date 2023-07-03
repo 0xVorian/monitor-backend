@@ -81,6 +81,7 @@ class KyberPrices:
             return int(feeReponseData['result'], 16)
     
     def get_price(self, base, quote, volume_in_base):
+        print("--------", base, quote, volume_in_base)
         fnName = 'getPrice['+ base + '/' + quote + ']:'
         print(fnName, 'start getting price for amount:', volume_in_base)
         token_in = self.underlying[self.inv_names[base]]
