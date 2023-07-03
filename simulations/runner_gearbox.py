@@ -165,6 +165,7 @@ def create_assets_std_ratio_information():
                 df = d
             else:
                 df = pd.concat([df, d], ignore_index=True, sort=False)
+        print(asset, "-------------------------------------------------")
         markets_data[asset] = df.sort_values("timestamp_x")
         markets_data[asset] = markets_data[asset][["timestamp_x", "ask_price", "bid_price"]]
 
