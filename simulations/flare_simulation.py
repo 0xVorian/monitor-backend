@@ -13,7 +13,6 @@ import traceback
 import brownian_motion
 import uuid
 
-
 class flare_simulation():
     liquidation_incentive = 0.1
     initial_dept_volume = 100_000_000
@@ -586,8 +585,7 @@ class flare_simulation():
             self.run_simulation(collateral_asset_name, c, dog_usdt_data, flare_btc_data, SITE_ID)
 
     def analyaze_random_results(self, collateral_asset_name):
-        files = glob.glob(collateral_asset_name + "_flare_data\\**\\*.csv", recursive=True)
-
+        files = glob.glob(collateral_asset_name + "_flare_data1\\**\\*.csv", recursive=True)
         df = pd.concat((pd.read_csv(f) for f in files), ignore_index=True)
         gg = [collateral_asset_name + "_usd_std", "flr_" + collateral_asset_name + "_std", "debt_volume",
               "usd_collateral_volume", "flare_collateral_volume",
@@ -658,7 +656,7 @@ class flare_simulation():
             uniques.at[index, 'min_usd_ucr_10'] = min_usd_ucr_10
             uniques.at[index, 'min_flare_ucr_10'] = min_flare_ucr_10
 
-        uniques.to_csv(collateral_asset_name + "_uniques.csv", index=False)
+        uniques.to_csv(collateral_asset_name + "1_uniques.csv", index=False)
         return uniques
 
     def create_timeseries_for_seed(self, seed, title):
@@ -757,7 +755,7 @@ class flare_simulation():
         return result
 
     def run_simulations_on_random_analisys(self, collateral_asset_name, percentile):
-        file_name = collateral_asset_name + "_uniques.csv"
+        file_name = collateral_asset_name + "1_uniques.csv"
         SITE_ID = self.get_site_id("flare")
         df = pd.read_csv(file_name)
         records = df.to_dict('records')
@@ -808,24 +806,24 @@ class flare_simulation():
                 report.append(report_row)
                 print("report", len(report))
         print(len(report))
-        pd.DataFrame(report).to_csv(collateral_asset_name + '_' + str(is_random) + "_ef.csv", index=False)
+        pd.DataFrame(report).to_csv(collateral_asset_name + '1_' + str(is_random) + "_ef.csv", index=False)
 
 
 if __name__ == '__main__':
     save_all_the_way = False
-    save_time_series =  False
-    save_images = False
-    initail_seed = int(sys.argv[1])
-    collateral_asset_name = sys.argv[2]
-    total_runs = 50
-    Parallel(n_jobs=10)(delayed(flare_simulation().run_random_simulation)(collateral_asset_name, initail_seed + j) for j in range(total_runs))
+    # save_time_series =  False
+    # save_images = False
+    # initail_seed = int(sys.argv[1])
+    # collateral_asset_name = sys.argv[2]
+    # total_runs = 50
+    # Parallel(n_jobs=10)(delayed(flare_simulation().run_random_simulation)(collateral_asset_name, initail_seed + j) for j in range(total_runs))
 
-    # collateral_asset_name = sys.argv[1]
-    # flare_simulation().analyaze_random_results(collateral_asset_name)
-    # save_time_series = False
-    # save_images = True
-    # flare_simulation().run_simulations_on_random_analisys(collateral_asset_name, "01")
-    # flare_simulation().find_ef_on_results(collateral_asset_name, collateral_asset_name + "_uniques.csv", True)
+    collateral_asset_name = sys.argv[1]
+    flare_simulation().analyaze_random_results(collateral_asset_name)
+    save_time_series = False
+    save_images = True
+    flare_simulation().run_simulations_on_random_analisys(collateral_asset_name, "01")
+    flare_simulation().find_ef_on_results(collateral_asset_name, collateral_asset_name + "1_uniques.csv", True)
 
     # flare_simulation().find_ef_on_results("Btc","webserver\\flare\\REGULAR_BTC\\summary.csv", False)
     # flare_simulation().find_ef_on_results("Doge","webserver\\flare\\REGULAR_DOGE\\summary.csv", False)
