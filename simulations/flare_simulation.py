@@ -163,6 +163,7 @@ class flare_simulation():
         min_flr_ucr = float('inf')
         running_score = 0
         time_series_report_name = ""
+        total_flare_liquidation_for_report = 0
         try:
             flr_liquidation_table = []
             usd_liquidation_table = []
@@ -420,9 +421,11 @@ class flare_simulation():
                 "flare_btc_std": [1],
                 "debt_volume": [self.initial_dept_volume],
                 "usd_dl_x": [0.1, 0.2, 0.3],
-                "usd_dl_recovery": [30, 60, 90, 120],
+                #"usd_dl_recovery": [30, 60, 90, 120],
+                "usd_dl_recovery": [240, 360],
                 "flare_dl_x": [0.1, 0.2, 0.3],
-                "flare_dl_recovery": [30, 60, 90, 120],
+                #"flare_dl_recovery": [30, 60, 90, 120],
+                "flare_dl_recovery": [120],
                 "min_usd_cr": [1.2, 1.3, 1.4],
                 "safe_usd_cr": [0.2, 0.3, 0.4],
                 "min_flare_cr": [1.5, 1.7, 2.0],
@@ -449,9 +452,11 @@ class flare_simulation():
                 "flare_btc_std": [1],
                 "debt_volume": [self.initial_dept_volume],
                 "usd_dl_x": [0.1, 0.2, 0.3],
-                "usd_dl_recovery": [30, 60, 90, 120],
+                #"usd_dl_recovery": [30, 60, 90, 120],
+                "usd_dl_recovery": [240, 360],
                 "flare_dl_x": [0.1, 0.2, 0.3],
-                "flare_dl_recovery": [30, 60, 90, 120],
+                #"flare_dl_recovery": [30, 60, 90, 120],
+                "flare_dl_recovery": [120],
                 "min_usd_cr": [1.3, 1.4, 1.5],
                 "safe_usd_cr": [0.2, 0.3, 0.4],
                 "min_flare_cr": [1.5, 1.7, 2.0],
@@ -478,9 +483,11 @@ class flare_simulation():
                 "flare_btc_std": [1],
                 "debt_volume": [self.initial_dept_volume],
                 "usd_dl_x": [0.1, 0.2, 0.3],
-                "usd_dl_recovery": [30, 60, 90, 120],
+                #"usd_dl_recovery": [30, 60, 90, 120],
+                "usd_dl_recovery": [240, 360],
                 "flare_dl_x": [0.1, 0.2, 0.3],
-                "flare_dl_recovery": [30, 60, 90, 120],
+                #"flare_dl_recovery": [30, 60, 90, 120],
+                "flare_dl_recovery": [120],
                 "min_usd_cr": [1.5, 2.0, 2.5],
                 "safe_usd_cr": [0.2, 0.3, 0.4],
                 "min_flare_cr": [2, 2.5, 3.0],
@@ -509,9 +516,11 @@ class flare_simulation():
                 "flare_btc_std": [0.5],
                 "debt_volume": [self.initial_dept_volume],
                 "usd_dl_x": [0.1, 0.2, 0.3],
-                "usd_dl_recovery": [30, 60, 90, 120],
+                #"usd_dl_recovery": [30, 60, 90, 120],
+                "usd_dl_recovery": [240, 360],
                 "flare_dl_x": [0.1, 0.2, 0.3],
-                "flare_dl_recovery": [30, 60, 90, 120],
+                #"flare_dl_recovery": [30, 60, 90, 120],
+                "flare_dl_recovery": [120],
                 "min_usd_cr": [1.2, 1.3, 1.4],
                 "safe_usd_cr": [0.2, 0.3, 0.4],
                 "min_flare_cr": [1.5, 1.7, 2.0],
@@ -532,9 +541,11 @@ class flare_simulation():
                 "flare_btc_std": [2],
                 "debt_volume": [self.initial_dept_volume],
                 "usd_dl_x": [0.1, 0.2, 0.3],
-                "usd_dl_recovery": [30, 60, 90, 120],
+                #"usd_dl_recovery": [30, 60, 90, 120],
+                "usd_dl_recovery": [240, 360],
                 "flare_dl_x": [0.1, 0.2, 0.3],
-                "flare_dl_recovery": [30, 60, 90, 120],
+                #"flare_dl_recovery": [30, 60, 90, 120],
+                "flare_dl_recovery": [120],
                 "min_usd_cr": [1.5, 2.0, 2.5],
                 "safe_usd_cr": [0.2, 0.3, 0.4],
                 "min_flare_cr": [2, 2.5, 3.0],
@@ -555,9 +566,11 @@ class flare_simulation():
                 "flare_btc_std": [0.66],
                 "debt_volume": [self.initial_dept_volume],
                 "usd_dl_x": [0.1, 0.2, 0.3],
-                "usd_dl_recovery": [30, 60, 90, 120],
+                #"usd_dl_recovery": [30, 60, 90, 120],
+                "usd_dl_recovery": [240, 360],
                 "flare_dl_x": [0.1, 0.2, 0.3],
-                "flare_dl_recovery": [30, 60, 90, 120],
+                #"flare_dl_recovery": [30, 60, 90, 120],
+                "flare_dl_recovery":[120],
                 "min_usd_cr": [1.2, 1.3, 1.4],
                 "safe_usd_cr": [0.2, 0.3, 0.4],
                 "min_flare_cr": [1.5, 1.7, 2.0],
@@ -649,12 +662,12 @@ class flare_simulation():
         return uniques
 
     def create_timeseries_for_seed(self, seed, title):
-        btc_usdt_data = brownian_motion.generate_brownian_motion(0.3, 100, 60 * 24, seed)
+        btc_usdt_data = brownian_motion.generate_brownian_motion(1.3, 100, 60 * 24, seed)
         btc_usdt_data["open"] = btc_usdt_data["adjust_price"]
         btc_usdt_data["ask_price"] = btc_usdt_data["adjust_price"]
         btc_usdt_data["bid_price"] = btc_usdt_data["adjust_price"]
 
-        flare_btc_data = brownian_motion.generate_brownian_motion(0.5, 100, 60 * 24, seed + 1)
+        flare_btc_data = brownian_motion.generate_brownian_motion(1.5, 100, 60 * 24, seed + 1)
         flare_btc_data["open"] = flare_btc_data["adjust_price"]
         flare_btc_data["ask_price"] = flare_btc_data["adjust_price"]
         flare_btc_data["bid_price"] = flare_btc_data["adjust_price"]
@@ -799,7 +812,8 @@ class flare_simulation():
 
 
 if __name__ == '__main__':
-    # save_all_the_way = True
+    save_all_the_way = False
+
     # save_time_series =  False
     # save_images = False
     # initail_seed = int(sys.argv[1])
@@ -807,18 +821,18 @@ if __name__ == '__main__':
     # total_runs = 50
     # Parallel(n_jobs=10)(delayed(flare_simulation().run_random_simulation)(collateral_asset_name, initail_seed + j) for j in range(total_runs))
 
-    collateral_asset_name = sys.argv[1]
-    flare_simulation().analyaze_random_results(collateral_asset_name)
-    save_time_series = False
-    save_images = True
-    flare_simulation().run_simulations_on_random_analisys(collateral_asset_name, "01")
-    flare_simulation().find_ef_on_results(collateral_asset_name, collateral_asset_name + "_uniques.csv", True)
+    # collateral_asset_name = sys.argv[1]
+    # flare_simulation().analyaze_random_results(collateral_asset_name)
+    # save_time_series = False
+    # save_images = True
+    # flare_simulation().run_simulations_on_random_analisys(collateral_asset_name, "01")
+    # flare_simulation().find_ef_on_results(collateral_asset_name, collateral_asset_name + "_uniques.csv", True)
 
     # flare_simulation().find_ef_on_results("Btc","webserver\\flare\\REGULAR_BTC\\summary.csv", False)
     # flare_simulation().find_ef_on_results("Doge","webserver\\flare\\REGULAR_DOGE\\summary.csv", False)
     # flare_simulation().find_ef_on_results("Xrp","webserver\\flare\\REGULAR_XRP\\summary.csv", False)
 
-    # collateral_asset_name = sys.argv[1]
-    # save_time_series = False
-    # save_images = False
-    # flare_simulation().run_regular_simulation(collateral_asset_name)
+    collateral_asset_name = sys.argv[1]
+    save_time_series = False
+    save_images = True
+    flare_simulation().run_regular_simulation(collateral_asset_name)
