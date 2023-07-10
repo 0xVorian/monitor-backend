@@ -821,7 +821,7 @@ if __name__ == '__main__':
     collateral_asset_name = sys.argv[2]
     total_runs = 50
     Parallel(n_jobs=10)(delayed(flare_simulation().run_random_simulation)(collateral_asset_name, initail_seed + j) for j in range(total_runs))
-
+  
     # collateral_asset_name = sys.argv[1]
     # flare_simulation().analyaze_random_results(collateral_asset_name)
     # save_time_series = False
