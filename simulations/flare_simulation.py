@@ -456,9 +456,11 @@ class flare_simulation():
                 "flare_dl_x": [0.1, 0.2, 0.3],
                 #"flare_dl_recovery": [30, 60, 90, 120],
                 "flare_dl_recovery": [120],
-                "min_usd_cr": [1.3, 1.4, 1.5],
+                # "min_usd_cr": [1.3, 1.4, 1.5],
+                "min_usd_cr": [1.5, 2.0, 2.5],
+                #"min_flare_cr": [1.5, 1.7, 2.0],
                 "safe_usd_cr": [0.2, 0.3, 0.4],
-                "min_flare_cr": [1.5, 1.7, 2.0],
+                "min_flare_cr": [2, 2.5, 3.0],
                 "safe_flare_cr": [0.1, 0.5, 1.0],
                 "usd_collateral_ratio": [1],
                 "liquidation_incentive_time_factor": [0, 0.05]}
@@ -570,9 +572,11 @@ class flare_simulation():
                 "flare_dl_x": [0.1, 0.2, 0.3],
                 #"flare_dl_recovery": [30, 60, 90, 120],
                 "flare_dl_recovery":[120],
-                "min_usd_cr": [1.2, 1.3, 1.4],
+                #"min_usd_cr": [1.2, 1.3, 1.4],
+                "min_usd_cr": [1.5, 2.0, 2.5],
                 "safe_usd_cr": [0.2, 0.3, 0.4],
-                "min_flare_cr": [1.5, 1.7, 2.0],
+                # "min_flare_cr": [1.5, 1.7, 2.0],
+                "min_flare_cr": [2, 2.5, 3.0],
                 "safe_flare_cr": [0.1, 0.5, 1.0],
                 "usd_collateral_ratio": [1],
                 "liquidation_incentive_time_factor": [0, 0.05]}
@@ -811,23 +815,23 @@ class flare_simulation():
 
 if __name__ == '__main__':
     save_all_the_way = False
-    # save_time_series =  False
-    # save_images = False
-    # initail_seed = int(sys.argv[1])
-    # collateral_asset_name = sys.argv[2]
-    # total_runs = 50
-    # Parallel(n_jobs=10)(delayed(flare_simulation().run_random_simulation)(collateral_asset_name, initail_seed + j) for j in range(total_runs))
-
-    collateral_asset_name = sys.argv[1]
-    flare_simulation().analyaze_random_results(collateral_asset_name)
     save_time_series = False
-    save_images = True
-    flare_simulation().run_simulations_on_random_analisys(collateral_asset_name, "01")
-    flare_simulation().find_ef_on_results(collateral_asset_name, collateral_asset_name + "1_uniques.csv", True)
+    save_images = False
+    initail_seed = int(sys.argv[1])
+    collateral_asset_name = sys.argv[2]
+    total_runs = 50
+    Parallel(n_jobs=10)(delayed(flare_simulation().run_random_simulation)(collateral_asset_name, initail_seed + j) for j in range(total_runs))
 
-    # flare_simulation().find_ef_on_results("Btc","webserver\\flare\\REGULAR_BTC\\summary.csv", False)
-    # flare_simulation().find_ef_on_results("Doge","webserver\\flare\\REGULAR_DOGE\\summary.csv", False)
-    # flare_simulation().find_ef_on_results("Xrp","webserver\\flare\\REGULAR_XRP\\summary.csv", False)
+    # collateral_asset_name = sys.argv[1]
+    # flare_simulation().analyaze_random_results(collateral_asset_name)
+    # save_time_series = False
+    # save_images = True
+    # flare_simulation().run_simulations_on_random_analisys(collateral_asset_name, "01")
+    # flare_simulation().find_ef_on_results(collateral_asset_name, collateral_asset_name + "1_uniques.csv", True)
+
+    # flare_simulation().find_ef_on_results("Btc","webserver\\flare\\2023-7-9-12-50\\summary.csv", False)
+    # flare_simulation().find_ef_on_results("Doge","webserver\\flare\\2023-7-9-12-52\\summary.csv", False)
+    # flare_simulation().find_ef_on_results("Xrp","webserver\\flare\\2023-7-9-12-51\\summary.csv", False)
 
     # collateral_asset_name = sys.argv[1]
     # save_time_series = False
