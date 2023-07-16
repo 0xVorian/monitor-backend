@@ -1,6 +1,6 @@
 import requests
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 import pandas as pd
 
 def download_candles(symbol, interval, start_time, end_time):
@@ -47,58 +47,23 @@ def download_candles(symbol, interval, start_time, end_time):
         return None
 
 
-# Example usage
-symbol = "XRPUSDT"  # Symbol for Bitcoin against USDT
-interval = "1m"  # 1-minute interval
-all_candels = []
-year = 2021
-month = 4
-day = 5
-
-start_time = int(datetime(year, month, day , 0, 0).timestamp() * 1000)  # Example: May 30, 2023
-end_time = int(datetime(year, month, day, 23, 59).timestamp() * 1000)  # Example: May 30, 2023
-candles = download_candles(symbol, interval, start_time, end_time)
-all_candels += candles
-
-start_time = int(datetime(year, month, day, 6, 0).timestamp() * 1000)  # Example: May 30, 2023
-end_time = int(datetime(year, month, day, 23, 59).timestamp() * 1000)  # Example: May 30, 2023
-candles = download_candles(symbol, interval, start_time, end_time)
-all_candels += candles
-
-start_time = int(datetime(year, month, day, 12, 0).timestamp() * 1000)  # Example: May 30, 2023
-end_time = int(datetime(year, month, day, 23, 59).timestamp() * 1000)  # Example: May 30, 2023
-candles = download_candles(symbol, interval, start_time, end_time)
-all_candels += candles
-
-start_time = int(datetime(year, month, day, 18, 0).timestamp() * 1000)  # Example: May 30, 2023
-end_time = int(datetime(year, month, day, 23, 59).timestamp() * 1000)  # Example: May 30, 2023
-candles = download_candles(symbol, interval, start_time, end_time)
-all_candels += candles
-
-# start_time = int(datetime(year, month, day + 1, 0, 0).timestamp() * 1000)  # Example: May 30, 2023
-# end_time = int(datetime(year, month, day + 1, 23, 59).timestamp() * 1000)  # Example: May 30, 2023
-# candles = download_candles(symbol, interval, start_time, end_time)
-# all_candels += candles
+# all_candels = []
+# d = datetime(2023, 1, 1)
+# symbol = "DOGEUSDT"  # Symbol for Bitcoin against USDT
+# interval = "1m"  # 1-minute interval
 #
-# start_time = int(datetime(year, month, day + 1, 6, 0).timestamp() * 1000)  # Example: May 30, 2023
-# end_time = int(datetime(year, month, day + 1, 23, 59).timestamp() * 1000)  # Example: May 30, 2023
-# candles = download_candles(symbol, interval, start_time, end_time)
-# all_candels += candles
-#
-# start_time = int(datetime(year, month, day + 1, 12, 0).timestamp() * 1000)  # Example: May 30, 2023
-# end_time = int(datetime(year, month, day + 1, 23, 59).timestamp() * 1000)  # Example: May 30, 2023
-# candles = download_candles(symbol, interval, start_time, end_time)
-# all_candels += candles
-#
-# start_time = int(datetime(year, month, day + 1, 18, 0).timestamp() * 1000)  # Example: May 30, 2023
-# end_time = int(datetime(year, month, day + 1, 23, 59).timestamp() * 1000)  # Example: May 30, 2023
-# candles = download_candles(symbol, interval, start_time, end_time)
-# all_candels += candles
+# while d < datetime.now():
+#     start_time = int(d.timestamp() * 1000)
+#     d = d + timedelta(hours=6)
+#     end_time = int(d.timestamp() * 1000)
+#     candles = download_candles(symbol, interval, start_time, end_time)
+#     all_candels += candles
+#     print(d, len(all_candels))
 
-all_candels = pd.DataFrame(all_candels)
-print(len(all_candels))
-all_candels = all_candels.drop_duplicates()
-print(len(all_candels))
-print(all_candels["open"].min())
-print(all_candels["close"].max())
-all_candels.to_csv("xrpusdt.csv")
+# all_candels = pd.DataFrame(all_candels)
+# print(len(all_candels))
+# all_candels = all_candels.drop_duplicates()
+# print(len(all_candels))
+# print(all_candels["open"].min())
+# print(all_candels["close"].max())
+# all_candels.to_csv(symbol + "_for_std.csv")

@@ -12,7 +12,7 @@ import unibox
 import traceback
 import brownian_motion
 import uuid
-
+import numpy as np
 class flare_simulation():
     liquidation_incentive = 0.1
     initial_dept_volume = 100_000_000
@@ -812,6 +812,24 @@ class flare_simulation():
         print(len(report))
         pd.DataFrame(report).to_csv(collateral_asset_name + '1_' + str(is_random) + "_ef.csv", index=False)
 
+    def find_std_ratio(self, base, quote):
+        df1 = pd.read_csv(f"data\\{base}USDT_for_std.csv")
+        df2 = pd.read_csv(f"data\\{quote}USDT_for_std.csv")
+
+        df3 = pd.merge(df1, df2, on="open_time")
+        df1["price"] = df1["open"]
+        df3["price"] = df3["open_x"] / df3["open_y"]
+
+        eth_rolling_std = np.average(
+            df3["price"].rolling(5 * 30).std().dropna() / df3["price"].rolling(5 * 30).mean().dropna())
+
+        usd_rolling_std = np.average(
+            df1["price"].rolling(5 * 30).std().dropna() / df1["price"].rolling(5 * 30).mean().dropna())
+
+        print("-----------------------------------------------------")
+        print(base)
+        print("usd_rolling_std", usd_rolling_std)
+        print("eth_rolling_std", eth_rolling_std)
 
 if __name__ == '__main__':
     # save_all_the_way = False
@@ -822,12 +840,12 @@ if __name__ == '__main__':
     # total_runs = 50
     # Parallel(n_jobs=10)(delayed(flare_simulation().run_random_simulation)(collateral_asset_name, initail_seed + j) for j in range(total_runs))
 
-    collateral_asset_name = sys.argv[1]
-    flare_simulation().analyaze_random_results(collateral_asset_name)
-    save_time_series = False
-    save_images = True
-    flare_simulation().run_simulations_on_random_analisys(collateral_asset_name, "01")
-    flare_simulation().find_ef_on_results(collateral_asset_name, collateral_asset_name + "1_uniques.csv", True)
+    # collateral_asset_name = sys.argv[1]
+    # flare_simulation().analyaze_random_results(collateral_asset_name)
+    # save_time_series = False
+    # save_images = True
+    # flare_simulation().run_simulations_on_random_analisys(collateral_asset_name, "01")
+    # flare_simulation().find_ef_on_results(collateral_asset_name, collateral_asset_name + "1_uniques.csv", True)
 
     # flare_simulation().find_ef_on_results("Btc","webserver\\flare\\2023-7-9-12-50\\summary.csv", False)
     # flare_simulation().find_ef_on_results("Doge","webserver\\flare\\2023-7-9-12-52\\summary.csv", False)
@@ -837,3 +855,7 @@ if __name__ == '__main__':
     # save_time_series = False
     # save_images = True
     # flare_simulation().run_regular_simulation(collateral_asset_name)
+
+    flare_simulation().find_std_ratio("DOGE", "ETH")
+    flare_simulation().find_std_ratio("BTC", "ETH")
+    flare_simulation().find_std_ratio("XRP", "ETH")
