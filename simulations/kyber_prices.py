@@ -162,23 +162,27 @@ class KyberPrices:
                 return price_in_base
             except Exception as e:
                 print(e)
-                print(response.text)
-                error_data = response.json()
-                print(error_data)
-                if 'err' in error_data and error_data['err'] == 'all quoteResults failed':
-                    # if no route found from the API, return a very high number
-                    print('all quoteResults failed returning -1')
-                    return -1
-                if 'message' in error_data and error_data['message'] == 'insufficient amount':
-                        print('insufficient amount returning -1')
+                try:
+                    print(response.text)
+                    error_data = response.json()
+                    print(error_data)
+                    if 'err' in error_data and error_data['err'] == 'all quoteResults failed':
+                        # if no route found from the API, return a very high number
+                        print('all quoteResults failed returning -1')
                         return -1
-                if 'message' in error_data and error_data['message'] == 'Internal server error':
-                        print('Internal server error returning -1')
-                        return -1
-                # "description":"insufficient liquidity"
-                if 'description' in error_data and error_data['description'] == 'insufficient liquidity':
-                        print('insufficient liquidity error returning -1')
-                        return -1
+                    if 'message' in error_data and error_data['message'] == 'insufficient amount':
+                            print('insufficient amount returning -1')
+                            return -1
+                    if 'message' in error_data and error_data['message'] == 'Internal server error':
+                            print('Internal server error returning -1')
+                            return -1
+                    # "description":"insufficient liquidity"
+                    if 'description' in error_data and error_data['description'] == 'insufficient liquidity':
+                            print('insufficient liquidity error returning -1')
+                            return -1
+                except Exception as sub_ex:
+                    print(sub_ex)
+                    print('will retry')
                 time.sleep(time_to_sleep)
                 time_to_sleep += 3
 
