@@ -91,8 +91,9 @@ async function FetchBalancerLiquidity(aave, rpcUrl) {
  */
 async function GetLiquidityForSlippage(baseConfig, quoteConfig, targetSlippage, swapsService) {
     const targetPriceUSD =  baseConfig.priceUSD - baseConfig.priceUSD * targetSlippage;
-
-    let tryAmount = BigNumber.from(1).mul(BigNumber.from(10).pow(baseConfig.decimals));
+    console.log(`${baseConfig.symbol} baseprice: ${baseConfig.priceUSD}, target: ${targetPriceUSD}`)
+    const startAmount = Math.round(100_000 / baseConfig.priceUSD).toFixed(0);
+    let tryAmount = BigNumber.from(startAmount).mul(BigNumber.from(10).pow(baseConfig.decimals));
     let normalizedTryAmount = normalize(tryAmount, baseConfig.decimals);
     let minAmount = undefined;
     let normalizedMinAmount = 0;
