@@ -17,11 +17,6 @@ const gasPrice = BigNumber.from(0);
  * @param {string} rpcUrl 
  */
 async function FetchBalancerLiquidity(aave, rpcUrl) {
-    console.log('Deleting old balancer_volume_for_slippage.json file');
-    fs.rmSync('balancer_volume_for_slippage.json', {
-        force: true
-    });
-    
     const balancer = new BalancerSDK({
         network: 100, // gnosis
         rpcUrl: rpcUrl,
@@ -78,6 +73,10 @@ async function FetchBalancerLiquidity(aave, rpcUrl) {
         }
     }
 
+    console.log('Deleting old balancer_volume_for_slippage.json file');
+    fs.rmSync('balancer_volume_for_slippage.json', {
+        force: true
+    });
     fs.writeFileSync('balancer_volume_for_slippage.json', JSON.stringify(liquidityForSlippage, null, 2));
 }
 
