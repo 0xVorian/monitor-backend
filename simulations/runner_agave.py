@@ -341,7 +341,7 @@ if __name__ == '__main__':
             d1 = utils.get_file_time(oracle_json_file)
             d1 = min(last_update_time, d1)
 
-            current_supply_borrow = get_supply_borrow()
+            current_supply_borrow = None # 17/08/2023: disable supply/borrow alerts get_supply_borrow()
             alert_params = get_alert_params()
             print('alert_params', alert_params)
             old_alerts = utils.compare_to_prod_and_send_alerts(old_alerts, d1, "agave", "4", SITE_ID, alert_params, send_alerts, ignore_list= ignore_list, current_supply_borrow= current_supply_borrow)
