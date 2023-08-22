@@ -139,8 +139,14 @@ def fix_usd_volume_for_slippage():
     for base_symbol in balancer_data: 
         if base_symbol == 'json_time': continue
         for quote_symbol in balancer_data[base_symbol]:
-            print("overwritting volume for", base_symbol, quote_symbol, current_data[base_symbol][quote_symbol], "with", balancer_data[base_symbol][quote_symbol])
-            current_data[base_symbol][quote_symbol] = balancer_data[base_symbol][quote_symbol]
+            balancer_liquidity = float(balancer_data[base_symbol][quote_symbol])
+            old_liquidity = float(current_data[base_symbol][quote_symbol])
+            if balancer_liquidity > old_liquidity:
+                print("overwritting volume for", base_symbol, quote_symbol, current_data[base_symbol][quote_symbol], "with", balancer_data[base_symbol][quote_symbol])
+                current_data[base_symbol][quote_symbol] = balancer_data[base_symbol][quote_symbol]
+            else:
+                print("keeping 1inch volume for", base_symbol, quote_symbol, current_data[base_symbol][quote_symbol], "because balancer volume is lower:", balancer_data[base_symbol][quote_symbol])
+                
     
     # for every wstETH pairs (whether base or quote), replace value by ETH value
     # e.g:
