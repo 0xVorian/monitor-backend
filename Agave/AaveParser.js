@@ -384,6 +384,15 @@ class Aave {
                 if(events == undefined) {
                     throw new Error('events undefined')
                 }
+
+                for(const e of events) {
+                    const a = e.returnValues.onBehalfOf
+                    if(a == undefined ) {
+                        console.log('user address undefined, ignoring');
+                        continue;
+                    }
+                    if(! this.userList.includes(a)) this.userList.push(a)
+                }
             }
             catch(err) {
                 // if any error, Code throws the error
@@ -391,14 +400,6 @@ class Aave {
                 startBlock -= this.blockStepInInit // try again
                 await sleep(5);
                 continue
-            }
-            for(const e of events) {
-                const a = e.returnValues.onBehalfOf
-                if(a == undefined ) {
-                    console.log('user address undefined, ignoring');
-                    continue;
-                }
-                if(! this.userList.includes(a)) this.userList.push(a)
             }
         }
     }

@@ -139,8 +139,8 @@ def fix_usd_volume_for_slippage():
     for base_symbol in balancer_data: 
         if base_symbol == 'json_time': continue
         for quote_symbol in balancer_data[base_symbol]:
-            balancer_liquidity = float(balancer_data[base_symbol][quote_symbol])
-            old_liquidity = float(current_data[base_symbol][quote_symbol])
+            balancer_liquidity = float(balancer_data[base_symbol][quote_symbol]["volume"])
+            old_liquidity = float(current_data[base_symbol][quote_symbol]["volume"])
             if balancer_liquidity > old_liquidity:
                 print("overwritting volume for", base_symbol, quote_symbol, current_data[base_symbol][quote_symbol], "with", balancer_data[base_symbol][quote_symbol])
                 current_data[base_symbol][quote_symbol] = balancer_data[base_symbol][quote_symbol]
