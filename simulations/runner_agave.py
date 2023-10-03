@@ -148,28 +148,28 @@ def fix_usd_volume_for_slippage():
                 print("keeping 1inch volume for", base_symbol, quote_symbol, current_data[base_symbol][quote_symbol], "because balancer volume is lower:", balancer_data[base_symbol][quote_symbol])
                 
     
-    # for every wstETH pairs (whether base or quote), replace value by ETH value
-    # e.g:
-    # - wstETH/USDC => ETH/USDC 
-    # - GNO/wstETH => GNO/ETH
-    for base_symbol in current_data: 
-        if base_symbol == 'json_time': continue
-        for quote_symbol in current_data[base_symbol]:
-            if base_symbol == 'wstETH' and quote_symbol == 'WETH':
-                continue
-            if quote_symbol == 'wstETH' and base_symbol == 'WETH':
-                continue
+    # # for every wstETH pairs (whether base or quote), replace value by ETH value
+    # # e.g:
+    # # - wstETH/USDC => ETH/USDC 
+    # # - GNO/wstETH => GNO/ETH
+    # for base_symbol in current_data: 
+    #     if base_symbol == 'json_time': continue
+    #     for quote_symbol in current_data[base_symbol]:
+    #         if base_symbol == 'wstETH' and quote_symbol == 'WETH':
+    #             continue
+    #         if quote_symbol == 'wstETH' and base_symbol == 'WETH':
+    #             continue
 
-            if base_symbol == 'wstETH' or quote_symbol == 'wstETH':
-                new_base = base_symbol
-                new_quote = quote_symbol
-                if new_base == 'wstETH':
-                    new_base = 'WETH'
-                if new_quote == 'wstETH':
-                    new_quote = 'WETH'
-                print("overwritting volume for", base_symbol, quote_symbol, 'with new symbols:', new_base, new_quote)
-                print('old value:', current_data[base_symbol][quote_symbol], "new value:", current_data[new_base][new_quote])
-                current_data[base_symbol][quote_symbol] = current_data[new_base][new_quote]
+    #         if base_symbol == 'wstETH' or quote_symbol == 'wstETH':
+    #             new_base = base_symbol
+    #             new_quote = quote_symbol
+    #             if new_base == 'wstETH':
+    #                 new_base = 'WETH'
+    #             if new_quote == 'wstETH':
+    #                 new_quote = 'WETH'
+    #             print("overwritting volume for", base_symbol, quote_symbol, 'with new symbols:', new_base, new_quote)
+    #             print('old value:', current_data[base_symbol][quote_symbol], "new value:", current_data[new_base][new_quote])
+    #             current_data[base_symbol][quote_symbol] = current_data[new_base][new_quote]
 
     balancer_file.close()
     current_file.close()
@@ -342,7 +342,7 @@ if __name__ == '__main__':
         base_runner.create_usd_volumes_for_slippage(SITE_ID, chain_id, inv_names, liquidation_incentive, kp.get_price, 
                                                     False)
         fix_usd_volume_for_slippage()
-        fix_wstETH_price()
+        # fix_wstETH_price()
         if alert_mode:
             d1 = utils.get_file_time(oracle_json_file)
             d1 = min(last_update_time, d1)
