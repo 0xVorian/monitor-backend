@@ -5,7 +5,13 @@ const { FetchBalancerLiquidity } = require('./BalancerLiquidityFetcher.js')
 const { sleep } = require('../utils/CommonFunctions.js');
 
 async function AgaveParser() {
-    const rpcUrl = "https://rpc.gnosis.gateway.fm";
+    const rpcUrl = "https://gnosischain-rpc.gateway.pokt.network";
+
+    // const rpcUrl = "https://rpc.gnosis.gateway.fm";
+    // const rpcUrl = "https://gnosis.drpc.org";
+    // const rpcUrl = "https://gnosis.blockpi.network/v1/rpc/public";
+    // const rpcUrl = "https://gnosis.publicnode.com";
+    // const rpcUrl = "https://gnosis.api.onfinality.io/public";
     const web3 = new Web3(rpcUrl)    
     const aave = new Aave(Addresses.agaveAddress, "GNOSIS", web3, "data.json")
 

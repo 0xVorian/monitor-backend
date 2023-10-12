@@ -84,20 +84,20 @@ class Aave {
     getData() {
         const result =
         {
-            "markets" : JSON.stringify(this.markets),
-            "prices" : JSON.stringify(this.prices),
+            "markets" : this.markets,
+            "prices" : this.prices,
             "lastUpdateTime" : this.lastUpdateTime,
-            "liquidationIncentive" : JSON.stringify(this.liquidationIncentive),
-            "collateralFactors" : JSON.stringify(this.collateralFactors),
-            "names" : JSON.stringify(this.names),
-            "borrowCaps" : JSON.stringify(this.borrowCaps),
-            "collateralCaps" : JSON.stringify(this.collateralCaps),
-            "decimals" : JSON.stringify(this.decimals),
-            "underlying" : JSON.stringify(this.underlying),
-            "closeFactor" : JSON.stringify(this.closeFactor),
-            "totalCollateral" : JSON.stringify(this.totalCollateral),
-            "totalBorrows" : JSON.stringify(this.totalBorrows),                          
-            "users" : JSON.stringify(this.users)
+            "liquidationIncentive" : this.liquidationIncentive,
+            "collateralFactors" : this.collateralFactors,
+            "names" : this.names,
+            "borrowCaps" : this.borrowCaps,
+            "collateralCaps" : this.collateralCaps,
+            "decimals" : this.decimals,
+            "underlying" : this.underlying,
+            "closeFactor" : this.closeFactor,
+            "totalCollateral" : this.totalCollateral,
+            "totalBorrows" : this.totalBorrows,                          
+            "users" : this.users
         }   
         try {
             fs.writeFileSync(this.fileName, JSON.stringify(result));
@@ -370,10 +370,13 @@ class Aave {
     async collectAllUsers() {
         const currBlock = /*this.deployBlock + 5000 * 5 //*/ await this.web3.eth.getBlockNumber() - 10
         console.log({currBlock})
-        for(let startBlock = this.deployBlock ; startBlock < currBlock ; startBlock += this.blockStepInInit) {
-            console.log({startBlock}, this.userList.length, this.blockStepInInit)
+        let blockStep = this.blockStepInInit;
+        let startBlock = this.deployBlock;
+        while(startBlock < currBlock) {
+        // for(let startBlock = this.deployBlock ; startBlock < currBlock ; startBlock += blockStep) {
 
-            const endBlock = (startBlock + this.blockStepInInit > currBlock) ? currBlock : startBlock + this.blockStepInInit
+            const endBlock = Math.min(startBlock + blockStep, currBlock);
+            console.log(`collectAllUsers: [${startBlock}-${endBlock}] fetching ${endBlock-startBlock} blocks. Current userList ${this.userList.length}`)
             let events
             try {
                 // Try to run this code
@@ -393,11 +396,20 @@ class Aave {
                     }
                     if(! this.userList.includes(a)) this.userList.push(a)
                 }
+
+                startBlock = endBlock;
+                blockStep = this.blockStepInInit;
             }
             catch(err) {
                 // if any error, Code throws the error
-                console.log("call failed, trying again", err.toString())
-                startBlock -= this.blockStepInInit // try again
+                // and try again
+
+                // on error, divide blockstep by 2
+                blockStep = Math.round(blockStep / 2);
+                if(blockStep < 1000) {
+                    blockStep = 1000;
+                }
+                console.log(`call failed, trying again, new blockStep ${blockStep}`, err.toString())
                 await sleep(5);
                 continue
             }

@@ -31,8 +31,8 @@ const agaveAddress =
 { "GNOSIS":
     { "lendingPoolAddressesProviderAddress" : "0x3673C22153E363B1da69732c4E0aA71872Bbb87F",
       "deployBlock" : 21726232,
-      "blockStepInInit" : 50000,
-      "multicallSize" : 50 }
+      "blockStepInInit" : 1000000,
+      "multicallSize" : 100 }
 }
 
 const balancerLiquidityConfig = {
@@ -43,7 +43,8 @@ const balancerLiquidityConfig = {
             "USDC",
             "WXDAI",
             "USDT",
-            "wstETH"
+            "wstETH",
+            "sDAI",
         ]
     },
     "USDC": {
@@ -102,6 +103,13 @@ const balancerLiquidityConfig = {
         address: "0xcB444e90D8198415266c6a2724b7900fb12FC56E",
         decimals: 18,
         quotes: [
+        ]
+    },
+    "sDAI": {
+        address: "0xaf204776c7245bF4147c2612BF6e5972Ee483701",
+        decimals: 18,
+        quotes: [
+            "WETH"
         ]
     }
 }
