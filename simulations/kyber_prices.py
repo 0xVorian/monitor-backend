@@ -139,6 +139,7 @@ class KyberPrices:
         time_to_sleep = 1
         while True:
             try:
+                print(fnName, 'url used', url_to_send)
                 response = requests.get(url_to_send, headers= {'Referer': 'https://app.1inch.io',
                                                                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:77.0) Gecko/20100101 Firefox/77.0'})
                 data = response.json()
@@ -154,7 +155,6 @@ class KyberPrices:
                 else:
                     response_amount_out = int(data["toTokenAmount"]) / 10 ** self.decimals[self.inv_names[quote]]
 
-                print(fnName, 'url used', url_to_send)
                 print(fnName, 'response amount', response_amount_out)
 
                 price_in_base = response_amount_in / response_amount_out

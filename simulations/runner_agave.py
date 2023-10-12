@@ -138,7 +138,9 @@ def fix_usd_volume_for_slippage():
     # overwrite current data with balancer data
     for base_symbol in balancer_data: 
         if base_symbol == 'json_time': continue
+        if base_symbol == 'sDAI': continue
         for quote_symbol in balancer_data[base_symbol]:
+            if quote_symbol == 'sDAI': continue
             balancer_liquidity = float(balancer_data[base_symbol][quote_symbol]["volume"])
             old_liquidity = float(current_data[base_symbol][quote_symbol]["volume"])
             if balancer_liquidity > old_liquidity:
@@ -170,6 +172,29 @@ def fix_usd_volume_for_slippage():
     #             print("overwritting volume for", base_symbol, quote_symbol, 'with new symbols:', new_base, new_quote)
     #             print('old value:', current_data[base_symbol][quote_symbol], "new value:", current_data[new_base][new_quote])
     #             current_data[base_symbol][quote_symbol] = current_data[new_base][new_quote]
+
+    # for every wxDAI pair (whether base or quote), add sDAI liquidity with the same amount
+    current_data['sDAI'] = {}
+    current_data['sDAI']['WXDAI'] = {}
+    current_data['sDAI']['WXDAI']['volume'] = 100000000
+    current_data['sDAI']['WXDAI']['llc'] = 1
+    current_data['WXDAI']['sDAI'] = {}
+    current_data['WXDAI']['sDAI']['volume'] = 100000000
+    current_data['WXDAI']['sDAI']['llc'] = 1
+
+    for base_symbol in list(current_data): 
+        if base_symbol == 'json_time': continue
+        if base_symbol == 'sDAI': continue
+
+        for quote_symbol in list(current_data[base_symbol]):
+            if quote_symbol == 'sDAI': continue
+            if base_symbol == 'WXDAI':
+                print('copying on', base_symbol, '/', quote_symbol, 'to sDAI/', quote_symbol)
+                current_data['sDAI'][quote_symbol] = current_data[base_symbol][quote_symbol]
+            if quote_symbol == 'WXDAI':
+                print('copying on', base_symbol, '/', quote_symbol, 'to', base_symbol, '/sDAI')
+                current_data[base_symbol]['sDAI'] = current_data[base_symbol][quote_symbol]
+
 
     balancer_file.close()
     current_file.close()
@@ -330,6 +355,9 @@ if __name__ == '__main__':
                     print('Adding', tokenName, 'to the ignore list because collateralCap:', tokenCap)
                     ignore_list.append(tokenName)
             
+            # we also add sDAI to the ignore list
+            ignore_list.append('sDAI')
+
             # for every tokens in the ignore list, delete entry in inv_names before calling 'create_usd_volumes_for_slippage'
             # it will remove them from the data fetch and will greatly speed up the alert process
             # the slippage data for these tokens will not be needed anyway as we will ignore them
@@ -339,8 +367,13 @@ if __name__ == '__main__':
             
             print('new value for inv_names', inv_names)
 
-        base_runner.create_usd_volumes_for_slippage(SITE_ID, chain_id, inv_names, liquidation_incentive, kp.get_price, 
-                                                    False)
+        # remove sDAI from inv_names to prevent fetching liquidity from 1inch as we will get the liquidity from WXDAI pair
+        if 'sDAI' in inv_names:
+            del inv_names['sDAI']
+        base_runner.create_usd_volumes_for_slippage(SITE_ID, chain_id, inv_names, liquidation_incentive, kp.get_price, False)        
+        # re add after
+        inv_names['sDAI'] = '0xaf204776c7245bF4147c2612BF6e5972Ee483701'
+
         fix_usd_volume_for_slippage()
         # fix_wstETH_price()
         if alert_mode:
