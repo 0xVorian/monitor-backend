@@ -106,6 +106,10 @@ class KyberPrices:
         else:
             print(fnName, 'default api version for 1inch:', api_version)
 
+        headers = {
+            'accept': 'application/json',
+        }
+
         if api_version == 'fusion':
             print(fnName, 'using 1inch fusion')
             url_to_send = 'https://fusion.1inch.io/quoter/v1.0/' +str(self.chain_id)+ '/quote/receive?walletAddress=0x0000000000000000000000000000000000000000&fromTokenAddress=' + str(token_in) \
@@ -128,6 +132,13 @@ class KyberPrices:
                 "fromTokenAddress=" + str(token_in) + "&" \
                 "toTokenAddress=" + str(token_out) + "&" \
                 "amount=" + str(int(amount_in))
+        elif api_version == '1inch_portal':
+            print(fnName, 'using 1inch portal')
+            if not hasattr(private_config, 'one_inch_api_key'):
+                raise Exception('NO API KEY IN PRIVATE CONFIG' )
+            headers['Authorization'] = 'Bearer ' + private_config.one_inch_api_key
+
+            url_to_send = "https://api.1inch.dev/swap/v5.2/" + str(self.chain_id) + "/quote?src=" + str(token_in) + "&dst=" + str(token_out) + "&amount=" + str(int(amount_in))
         else:
             print(fnName, 'using basic 1inch api')
             url_to_send = "https://api.1inch.io/v5.0/" + str(self.chain_id) + "/quote?" \
@@ -140,8 +151,7 @@ class KyberPrices:
         while True:
             try:
                 print(fnName, 'url used', url_to_send)
-                response = requests.get(url_to_send, headers= {'Referer': 'https://app.1inch.io',
-                                                               'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:77.0) Gecko/20100101 Firefox/77.0'})
+                response = requests.get(url_to_send, headers= headers)
                 data = response.json()
                 response_amount_in = int(amount_in) / 10 ** self.decimals[self.inv_names[base]]
                 if base == "VST":
@@ -152,6 +162,8 @@ class KyberPrices:
                     response_amount_out = int(data['toTokenAmount']) / 10 ** self.decimals[self.inv_names[quote]]
                 elif api_version == 'pathfinder': 
                     response_amount_out = int(data['bestResult']['toTokenAmount']) / 10 ** self.decimals[self.inv_names[quote]]
+                elif api_version == '1inch_portal': 
+                    response_amount_out = int(data['toAmount']) / 10 ** self.decimals[self.inv_names[quote]]
                 else:
                     response_amount_out = int(data["toTokenAmount"]) / 10 ** self.decimals[self.inv_names[quote]]
 
