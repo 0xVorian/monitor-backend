@@ -357,6 +357,8 @@ if __name__ == '__main__':
             
             # we also add sDAI to the ignore list
             ignore_list.append('sDAI')
+            # we also add wstETH to the ignore list
+            ignore_list.append('wstETH')
 
             # for every tokens in the ignore list, delete entry in inv_names before calling 'create_usd_volumes_for_slippage'
             # it will remove them from the data fetch and will greatly speed up the alert process
