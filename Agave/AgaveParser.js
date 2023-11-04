@@ -5,7 +5,7 @@ const { FetchBalancerLiquidity } = require('./BalancerLiquidityFetcher.js')
 const { sleep } = require('../utils/CommonFunctions.js');
 
 async function AgaveParser() {
-    const rpcUrl = "https://gnosischain-rpc.gateway.pokt.network";
+    const rpcUrl = "https://rpc.gnosis.gateway.fm";
 
     // const rpcUrl = "https://rpc.gnosis.gateway.fm";
     // const rpcUrl = "https://gnosis.drpc.org";
