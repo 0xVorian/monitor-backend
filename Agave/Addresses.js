@@ -31,8 +31,8 @@ const agaveAddress =
 { "GNOSIS":
     { "lendingPoolAddressesProviderAddress" : "0x3673C22153E363B1da69732c4E0aA71872Bbb87F",
       "deployBlock" : 21726232,
-      "blockStepInInit" : 1000000,
-      "multicallSize" : 100 }
+      "blockStepInInit" : 100000,
+      "multicallSize" : 50 }
 }
 
 const balancerLiquidityConfig = {
